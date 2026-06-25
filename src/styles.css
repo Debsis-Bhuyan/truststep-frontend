@@ -1,1 +1,149 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { font-family: 'Inter', system-ui, sans-serif; }
+  body { @apply bg-slate-50 text-slate-800 antialiased; }
+}
+
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm font-medium
+           hover:bg-primary-700 active:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white text-slate-700 text-sm font-medium border border-slate-200
+           hover:bg-slate-50 active:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 text-white text-sm font-medium
+           hover:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150;
+  }
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium
+           hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-slate-600 text-sm font-medium
+           hover:bg-slate-100 focus:outline-none transition-colors duration-150;
+  }
+
+  /* Form controls */
+  .form-input {
+    @apply w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-800 bg-white
+           placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           disabled:bg-slate-50 disabled:text-slate-500 transition duration-150;
+  }
+  .form-label {
+    @apply block text-sm font-medium text-slate-700 mb-1;
+  }
+  .form-error {
+    @apply text-xs text-red-600 mt-1;
+  }
+  .form-select {
+    @apply w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-800 bg-white
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           disabled:bg-slate-50 transition duration-150 cursor-pointer;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-card p-6;
+  }
+  .card-sm {
+    @apply bg-white rounded-xl border border-slate-200 shadow-card p-4;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-card p-5 flex flex-col gap-1;
+  }
+  .stat-value {
+    @apply text-2xl font-bold text-slate-900;
+  }
+  .stat-label {
+    @apply text-xs font-medium text-slate-500 uppercase tracking-wide;
+  }
+
+  /* Badges / Status pills */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-green  { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-blue   { @apply badge bg-blue-100 text-blue-700; }
+  .badge-amber  { @apply badge bg-amber-100 text-amber-700; }
+  .badge-red    { @apply badge bg-red-100 text-red-700; }
+  .badge-slate  { @apply badge bg-slate-100 text-slate-600; }
+  .badge-purple { @apply badge bg-purple-100 text-purple-700; }
+
+  /* Page header */
+  .page-header {
+    @apply mb-6;
+  }
+  .page-title {
+    @apply text-2xl font-bold text-slate-900;
+  }
+  .page-subtitle {
+    @apply text-sm text-slate-500 mt-1;
+  }
+
+  /* Table */
+  .table-wrapper {
+    @apply w-full overflow-x-auto rounded-xl border border-slate-200;
+  }
+  .ts-table {
+    @apply w-full text-sm text-left;
+  }
+  .ts-table thead tr {
+    @apply bg-slate-50 border-b border-slate-200;
+  }
+  .ts-table thead th {
+    @apply px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider;
+  }
+  .ts-table tbody tr {
+    @apply border-b border-slate-100 hover:bg-slate-50 transition-colors;
+  }
+  .ts-table tbody tr:last-child {
+    @apply border-b-0;
+  }
+  .ts-table tbody td {
+    @apply px-4 py-3 text-slate-700;
+  }
+
+  /* Drop zone */
+  .drop-zone {
+    @apply border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer
+           hover:border-primary-400 hover:bg-primary-50 transition-colors duration-150;
+  }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 text-sm font-medium
+           hover:bg-slate-100 hover:text-slate-900 transition-colors duration-150 cursor-pointer;
+  }
+  .nav-item-active {
+    @apply nav-item bg-primary-50 text-primary-700 hover:bg-primary-100 hover:text-primary-800;
+  }
+
+  /* Alert info bar */
+  .info-bar {
+    @apply flex items-start gap-2 p-3 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 text-sm;
+  }
+  .warning-bar {
+    @apply flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 text-sm;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-slate-200 border-t-primary-600;
+  }
+}
