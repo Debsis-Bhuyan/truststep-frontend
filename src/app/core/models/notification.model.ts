@@ -8,6 +8,7 @@ export interface NotificationResponse {
   isRead: boolean;
   createdAt: string;
 }
+
 export interface NotificationPage {
   content: NotificationResponse[];
   pageNumber: number;

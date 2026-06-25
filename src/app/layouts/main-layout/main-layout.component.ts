@@ -37,17 +37,25 @@ interface NavItem { label: string; route: string; icon: string; }
           }
         </nav>
 
-        <!-- User -->
+        <!-- User footer -->
         <div class="px-4 py-4 border-t border-slate-100">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-              <span class="text-primary-700 font-semibold text-sm">{{ userInitial() }}</span>
+          <a routerLink="/profile"
+             class="flex items-center gap-3 mb-3 p-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer group"
+             (click)="closeSidebar()">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-700
+                        flex items-center justify-center shrink-0">
+              <span class="text-white font-semibold text-sm">{{ userInitial() }}</span>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-slate-800 truncate">{{ user()?.name ?? 'User' }}</p>
+              <p class="text-sm font-medium text-slate-800 truncate group-hover:text-primary-700 transition-colors">
+                {{ user()?.name ?? 'User' }}
+              </p>
               <p class="text-xs text-slate-400 truncate">{{ user()?.email }}</p>
             </div>
-          </div>
+            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </a>
           <button (click)="logout()" class="w-full btn-secondary text-xs py-2">
             Sign out
           </button>
@@ -69,13 +77,20 @@ interface NavItem { label: string; route: string; icon: string; }
             </svg>
           </button>
           <div class="hidden lg:block"></div>
-          <div class="flex items-center gap-2">
-            <a routerLink="/notifications"
+          <div class="flex items-center gap-1">
+            <!-- Notifications -->
+            <a routerLink="/notifications" title="Notifications"
                class="relative p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
               </svg>
+            </a>
+            <!-- Profile avatar (top bar) -->
+            <a routerLink="/profile" title="My Profile"
+               class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-700
+                      flex items-center justify-center hover:opacity-80 transition-opacity ml-1">
+              <span class="text-white font-semibold text-sm">{{ userInitial() }}</span>
             </a>
           </div>
         </header>
@@ -113,12 +128,15 @@ export class MainLayoutComponent {
       { label: 'Emergency Fund',  route: '/borrower/emergency',   icon: '⚡' },
       { label: 'Repayment',       route: '/borrower/repayment',   icon: '💳' },
       { label: 'Notifications',   route: '/notifications',         icon: '🔔' },
+      { label: 'My Profile',      route: '/profile',               icon: '👤' },
     ];
     if (r.includes('MANAGER')) return [
       { label: 'Dashboard',       route: '/manager/dashboard',    icon: '🏠' },
       { label: 'All Loans',       route: '/manager/loans',        icon: '📋' },
       { label: 'Approvals',       route: '/manager/approvals',    icon: '✅' },
+      { label: 'Emergency Review',route: '/manager/review-emergency', icon: '⚡' },
       { label: 'Notifications',   route: '/notifications',         icon: '🔔' },
+      { label: 'My Profile',      route: '/profile',               icon: '👤' },
     ];
     if (r.includes('ADMIN')) return [
       { label: 'Dashboard',       route: '/admin/dashboard',      icon: '🏠' },
@@ -126,6 +144,7 @@ export class MainLayoutComponent {
       { label: 'System Config',   route: '/admin/config',         icon: '⚙️' },
       { label: 'Audit Log',       route: '/admin/audit',          icon: '📑' },
       { label: 'Notifications',   route: '/notifications',         icon: '🔔' },
+      { label: 'My Profile',      route: '/profile',               icon: '👤' },
     ];
     return [];
   });

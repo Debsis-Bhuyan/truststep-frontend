@@ -15,7 +15,7 @@ import { LoanResponse } from '../../../core/models/loan.model';
   template: `
     <div class="page-header">
       <h1 class="page-title">Milestones</h1>
-      <p class="page-subtitle">Define ≥3 milestones; allocations must sum to 80% fund. 10% retention on last.</p>
+      <p class="page-subtitle">Define ≥3 milestones · allocations must sum to 80% fund · 10% retention on last</p>
     </div>
 
     <div class="max-w-3xl">
@@ -26,20 +26,20 @@ import { LoanResponse } from '../../../core/models/loan.model';
         </div>
       } @else {
         @if (saved().length > 0) {
-          <!-- Existing milestones -->
           <div class="card mb-4">
             <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">Current Milestones</h2>
             <div class="table-wrapper">
               <table class="ts-table">
-                <thead><tr><th>#</th><th>Description</th><th>Amount</th><th>Retention</th><th>Status</th></tr></thead>
+                <thead><tr><th>#</th><th>Description</th><th>Allocated</th><th>Disbursed</th><th>Retention</th><th>Status</th></tr></thead>
                 <tbody>
-                  @for (m of saved(); track m.id) {
+                  @for (m of saved(); track m.milestoneId) {
                     <tr>
-                      <td>{{ m.sequenceNumber }}</td>
-                      <td class="font-medium">{{ m.description }}</td>
-                      <td>{{ inr(m.amount) }}</td>
+                      <td class="font-medium">{{ m.phaseNumber }}</td>
+                      <td>{{ m.description }}</td>
+                      <td>{{ inr(m.allocatedAmount) }}</td>
+                      <td>{{ inr(m.disbursedAmount) }}</td>
                       <td>{{ m.retentionAmount > 0 ? inr(m.retentionAmount) : '—' }}</td>
-                      <td><span [class]="badge(m.status)" class="badge">{{ m.status | titlecase }}</span></td>
+                      <td><span [class]="badge(m.status)" class="badge">{{ fmtStatus(m.status) }}</span></td>
                     </tr>
                   }
                 </tbody>
@@ -48,16 +48,16 @@ import { LoanResponse } from '../../../core/models/loan.model';
           </div>
         }
 
-        <!-- Setup form -->
         <div class="card">
           <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-1">Set up milestones</h2>
-          <p class="text-xs text-slate-400 mb-4">Minimum 3 phases · allocations must total {{ inr(milestoneFund()) }}</p>
+          <p class="text-xs text-slate-400 mb-4">Minimum 3 phases · must total {{ inr(milestoneFund()) }}</p>
 
           @if (error()) { <div class="warning-bar mb-4">⚠️ {{ error() }}</div> }
+          @if (successMsg()) { <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4 text-emerald-700 text-sm">✅ {{ successMsg() }}</div> }
 
           <form [formGroup]="form" (ngSubmit)="save()">
             <div class="mb-4 space-y-3">
-              <div class="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 uppercase px-2">
+              <div class="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 uppercase px-1">
                 <div class="col-span-1">#</div>
                 <div class="col-span-6">Description</div>
                 <div class="col-span-3">Amount (₹)</div>
@@ -66,23 +66,20 @@ import { LoanResponse } from '../../../core/models/loan.model';
 
               @for (mg of milestoneRows.controls; track mg; let idx = $index; let last = $last) {
                 <div [formGroupName]="idx" class="grid grid-cols-12 gap-2 items-center">
-                  <div class="col-span-1 text-sm text-slate-500 pl-2">
-                    {{ idx + 1 }}{{ last ? ' 🔒' : '' }}
-                  </div>
+                  <div class="col-span-1 text-sm text-slate-400 pl-1">{{ idx + 1 }}{{ last ? '🔒' : '' }}</div>
                   <div class="col-span-6">
                     <input formControlName="description" class="form-input text-sm" placeholder="e.g. Renovation">
                   </div>
                   <div class="col-span-3">
-                    <input formControlName="amount" type="number" class="form-input text-sm" placeholder="50000">
+                    <input formControlName="allocatedAmount" type="number" class="form-input text-sm" placeholder="50000">
                   </div>
-                  <div class="col-span-2 text-sm text-slate-500">
+                  <div class="col-span-2 text-xs text-slate-500">
                     {{ last ? inr(retentionOn(idx)) : '—' }}
                   </div>
                 </div>
               }
             </div>
 
-            <!-- Allocation bar -->
             <div class="flex items-center justify-between p-3 rounded-lg mb-4"
                  [class]="isBalanced() ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'">
               <span class="text-sm font-medium" [class]="isBalanced() ? 'text-emerald-700' : 'text-amber-700'">
@@ -116,15 +113,15 @@ export class MilestoneSetupComponent implements OnInit {
   saved = signal<MilestoneResponse[]>([]);
   loading = signal(false);
   error = signal('');
+  successMsg = signal('');
 
   get milestoneRows() { return this.form.get('milestones') as FormArray; }
 
   totalAllocated = computed(() => {
     try {
-      return this.milestoneRows.controls.reduce((s, c) => s + (+(c.get('amount')?.value ?? 0)), 0);
+      return this.milestoneRows.controls.reduce((s, c) => s + (+(c.get('allocatedAmount')?.value ?? 0)), 0);
     } catch { return 0; }
   });
-
   isBalanced = computed(() => this.totalAllocated() === this.milestoneFund() && this.milestoneFund() > 0);
 
   constructor(private fb: FormBuilder, private mSvc: MilestoneService,
@@ -137,18 +134,19 @@ export class MilestoneSetupComponent implements OnInit {
     const uid = this.auth.currentUser()?.id;
     if (!uid) return;
     this.loanSvc.getLoansByBorrower(uid).subscribe(res => {
-      const loan = res.data?.find((l: LoanResponse) => ['SANCTIONED', 'ACTIVE', 'MORATORIUM'].includes(l.status));
+      const loan = res.data?.find((l: LoanResponse) =>
+        ['SANCTIONED', 'ACTIVE', 'MORATORIUM'].includes(l.status));
       if (!loan) return;
-      this.loanId.set(loan.id);
+      this.loanId.set(loan.loanId);
       this.milestoneFund.set(loan.milestoneFund);
-      this.mSvc.getMilestonesByLoan(loan.id).subscribe(r => this.saved.set(r.data ?? []));
+      this.mSvc.getMilestonesByLoan(loan.loanId).subscribe(r => this.saved.set(r.data ?? []));
     });
   }
 
   addRow() {
     this.milestoneRows.push(this.fb.group({
-      description: ['', Validators.required],
-      amount: [null, [Validators.required, Validators.min(1)]]
+      description:     ['', Validators.required],
+      allocatedAmount: [null, [Validators.required, Validators.min(1)]]
     }));
   }
 
@@ -158,30 +156,33 @@ export class MilestoneSetupComponent implements OnInit {
 
   retentionOn(i: number) {
     if (i !== this.milestoneRows.length - 1) return 0;
-    const amt = +(this.milestoneRows.at(i).get('amount')?.value ?? 0);
-    return Math.round(amt * 0.10);
+    return Math.round(+(this.milestoneRows.at(i).get('allocatedAmount')?.value ?? 0) * 0.10);
   }
 
   save() {
     if (!this.isBalanced() || !this.loanId()) return;
-    this.loading.set(true);
-    this.error.set('');
+    this.loading.set(true); this.error.set(''); this.successMsg.set('');
     const milestones = this.milestoneRows.value.map((m: any, i: number, arr: any[]) => ({
-      ...m, isLast: i === arr.length - 1
+      description: m.description,
+      allocatedAmount: m.allocatedAmount,
+      isLastMilestone: i === arr.length - 1
     }));
     this.mSvc.saveMilestones(this.loanId()!, { milestones }).subscribe({
-      next: res => { this.saved.set(res.data ?? []); this.loading.set(false); },
+      next: res => {
+        this.saved.set(res.data ?? []);
+        this.successMsg.set('Milestones saved successfully!');
+        this.loading.set(false);
+      },
       error: e => { this.error.set(e.error?.message ?? 'Save failed'); this.loading.set(false); }
     });
   }
 
   inr(v: number) { return '₹' + (v ?? 0).toLocaleString('en-IN'); }
-
+  fmtStatus(s: string) { return s?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }
   badge(s: string) {
     const m: Record<string, string> = {
-      COMPLETED: 'badge-green', IN_PROGRESS: 'badge-blue',
-      APPROVED: 'badge-green', PENDING: 'badge-slate',
-      PROOF_SUBMITTED: 'badge-amber', REJECTED: 'badge-red'
+      COMPLETED: 'badge-green', IN_PROGRESS: 'badge-blue', APPROVED: 'badge-green',
+      PENDING: 'badge-slate', PROOF_SUBMITTED: 'badge-amber', REJECTED: 'badge-red'
     };
     return m[s] ?? 'badge-slate';
   }

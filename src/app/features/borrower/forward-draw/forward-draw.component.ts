@@ -5,6 +5,7 @@ import { MilestoneService } from '../../../core/services/milestone.service';
 import { LoanService } from '../../../core/services/loan.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { MilestoneResponse } from '../../../core/models/milestone.model';
+import { LoanResponse } from '../../../core/models/loan.model';
 
 @Component({
   selector: 'app-forward-draw',
@@ -30,8 +31,10 @@ import { MilestoneResponse } from '../../../core/models/milestone.model';
             <label class="form-label">From (future milestone)</label>
             <select formControlName="fromMilestoneId" class="form-select" (change)="updateMax()">
               <option value="">Select future milestone…</option>
-              @for (m of future(); track m.id) {
-                <option [value]="m.id">M{{ m.sequenceNumber }} · {{ m.description }} ({{ inr(m.amount) }})</option>
+              @for (m of future(); track m.milestoneId) {
+                <option [value]="m.milestoneId">
+                  M{{ m.phaseNumber }} · {{ m.description }} ({{ inr(m.allocatedAmount) }})
+                </option>
               }
             </select>
           </div>
@@ -40,15 +43,15 @@ import { MilestoneResponse } from '../../../core/models/milestone.model';
             <label class="form-label">To (current milestone)</label>
             <select formControlName="toMilestoneId" class="form-select">
               <option value="">Select current milestone…</option>
-              @for (m of current(); track m.id) {
-                <option [value]="m.id">M{{ m.sequenceNumber }} · {{ m.description }}</option>
+              @for (m of current(); track m.milestoneId) {
+                <option [value]="m.milestoneId">M{{ m.phaseNumber }} · {{ m.description }}</option>
               }
             </select>
           </div>
 
           <div>
             <label class="form-label">Amount (₹) — max {{ inr(maxDraw()) }}</label>
-            <input formControlName="amount" type="number" class="form-input" [placeholder]="maxDraw()">
+            <input formControlName="amount" type="number" class="form-input" [placeholder]="maxDraw() || 0">
             @if (form.get('amount')?.invalid && form.get('amount')?.touched) {
               <p class="form-error">Amount must be between 1 and {{ inr(maxDraw()) }}</p>
             }
@@ -75,11 +78,11 @@ import { MilestoneResponse } from '../../../core/models/milestone.model';
 export class ForwardDrawComponent implements OnInit {
   form: FormGroup;
   allMilestones = signal<MilestoneResponse[]>([]);
-  future = computed(() => this.allMilestones().filter(m => m.status === 'PENDING'));
+  future  = computed(() => this.allMilestones().filter(m => m.status === 'PENDING' && !m.forwardDrawUsed));
   current = computed(() => this.allMilestones().filter(m => m.status === 'IN_PROGRESS'));
   maxDraw = signal(0);
   loading = signal(false);
-  error = signal('');
+  error   = signal('');
   success = signal(false);
   private loanId: number | null = null;
 
@@ -97,17 +100,17 @@ export class ForwardDrawComponent implements OnInit {
     const uid = this.auth.currentUser()?.id;
     if (!uid) return;
     this.loanSvc.getLoansByBorrower(uid).subscribe(res => {
-      const loan = res.data?.find(l => ['ACTIVE', 'MORATORIUM'].includes(l.status));
+      const loan = res.data?.find((l: LoanResponse) => ['ACTIVE', 'MORATORIUM'].includes(l.status));
       if (!loan) return;
-      this.loanId = loan.id;
-      this.mSvc.getMilestonesByLoan(loan.id).subscribe(r => this.allMilestones.set(r.data ?? []));
+      this.loanId = loan.loanId;
+      this.mSvc.getMilestonesByLoan(loan.loanId).subscribe(r => this.allMilestones.set(r.data ?? []));
     });
   }
 
   updateMax() {
     const id = +this.form.value.fromMilestoneId;
-    const m = this.future().find(x => x.id === id);
-    const max = m ? Math.floor(m.amount * 0.5) : 0;
+    const m = this.future().find(x => x.milestoneId === id);
+    const max = m ? Math.floor(m.allocatedAmount * 0.5) : 0;
     this.maxDraw.set(max);
     this.form.get('amount')?.setValidators([Validators.required, Validators.min(1), Validators.max(max)]);
     this.form.get('amount')?.updateValueAndValidity();
@@ -115,14 +118,16 @@ export class ForwardDrawComponent implements OnInit {
 
   submit() {
     if (this.form.invalid || !this.loanId) { this.form.markAllAsTouched(); return; }
-    this.loading.set(true);
-    this.error.set('');
+    this.loading.set(true); this.error.set('');
     const { fromMilestoneId, toMilestoneId, amount, reason } = this.form.value;
-    this.mSvc.requestReallocation(this.loanId, {
+    this.mSvc.requestReallocation({
+      loanId:          this.loanId!,
+      requestedById:   this.auth.currentUser()!.id,
+      purpose:         'FORWARD_DRAW',
       fromMilestoneId: +fromMilestoneId,
       toMilestoneId:   +toMilestoneId,
-      amount, reason,
-      purpose: 'FORWARD_DRAW'
+      amount,
+      reason
     }).subscribe({
       next: () => { this.success.set(true); this.loading.set(false); this.form.reset(); },
       error: e => { this.error.set(e.error?.message ?? 'Request failed'); this.loading.set(false); }

@@ -19,6 +19,7 @@ import { BorrowerDashboardResponse } from '../../../core/models/loan.model';
       <div class="flex justify-center py-16"><span class="spinner w-8 h-8"></span></div>
     } @else if (!dash()) {
       <div class="card text-center py-12">
+        <div class="text-5xl mb-4">📋</div>
         <p class="text-slate-500 mb-4">No active loan found.</p>
         <a routerLink="/borrower/apply" class="btn-primary">Apply for a loan</a>
       </div>
@@ -35,7 +36,7 @@ import { BorrowerDashboardResponse } from '../../../core/models/loan.model';
         </div>
         <div class="stat-card">
           <span class="stat-label">Emergency Left</span>
-          <span class="stat-value text-emerald-700">{{ inr(dash()!.emergencyBalance) }}</span>
+          <span class="stat-value text-emerald-700">{{ inr(dash()!.emergencyLeft) }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">Status</span>
@@ -49,14 +50,17 @@ import { BorrowerDashboardResponse } from '../../../core/models/loan.model';
         <!-- Milestone progress -->
         <div class="card">
           <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">Milestone Progress</h2>
+          @if (dash()!.milestones.length === 0) {
+            <p class="text-sm text-slate-400 text-center py-4">No milestones defined yet.</p>
+          }
           <div class="space-y-3">
-            @for (m of dash()!.milestones; track m.id) {
+            @for (m of dash()!.milestones; track m.milestoneId) {
               <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                 <div>
-                  <p class="text-sm font-medium text-slate-800">{{ m.description }}</p>
-                  <p class="text-xs text-slate-400">{{ inr(m.amount) }}</p>
+                  <p class="text-sm font-medium text-slate-800">M{{ m.phaseNumber }} · {{ m.description }}</p>
+                  <p class="text-xs text-slate-400">{{ inr(m.allocatedAmount) }}</p>
                 </div>
-                <span [class]="milestoneBadge(m.status)" class="badge">{{ m.status | titlecase }}</span>
+                <span [class]="milestoneBadge(m.status)" class="badge">{{ fmtStatus(m.status) }}</span>
               </div>
             }
           </div>
@@ -74,6 +78,9 @@ import { BorrowerDashboardResponse } from '../../../core/models/loan.model';
             </a>
             <a routerLink="/borrower/emergency" class="btn-secondary w-full text-center block">
               Access emergency fund
+            </a>
+            <a routerLink="/borrower/loan" class="btn-ghost w-full text-center block text-sm">
+              View loan details
             </a>
           </div>
         </div>
@@ -97,15 +104,17 @@ export class BorrowerDashboardComponent implements OnInit {
     });
   }
 
-  inr(v: number): string {
-    return '₹' + (v ?? 0).toLocaleString('en-IN');
+  inr(v: number): string { return '₹' + (v ?? 0).toLocaleString('en-IN'); }
+
+  fmtStatus(s: string) {
+    return s?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) ?? s;
   }
 
   statusBadge(s: string) {
     const m: Record<string, string> = {
       MORATORIUM: 'badge-purple', ACTIVE: 'badge-green',
       REPAYMENT: 'badge-blue', SANCTIONED: 'badge-amber',
-      APPLIED: 'badge-slate', CLOSED: 'badge-slate'
+      APPLIED: 'badge-slate', UNDER_REVIEW: 'badge-amber', CLOSED: 'badge-slate'
     };
     return m[s] ?? 'badge-slate';
   }
@@ -114,7 +123,8 @@ export class BorrowerDashboardComponent implements OnInit {
     const m: Record<string, string> = {
       COMPLETED: 'badge-green', IN_PROGRESS: 'badge-blue',
       APPROVED: 'badge-green', PENDING: 'badge-slate',
-      PROOF_SUBMITTED: 'badge-amber', REJECTED: 'badge-red'
+      PROOF_SUBMITTED: 'badge-amber', REJECTED: 'badge-red',
+      PARTIALLY_APPROVED: 'badge-amber'
     };
     return m[s] ?? 'badge-slate';
   }

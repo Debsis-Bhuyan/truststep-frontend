@@ -21,9 +21,7 @@ import { NotificationResponse } from '../../core/models/notification.model';
     </div>
 
     @if (loading()) {
-      <div class="flex justify-center py-16">
-        <span class="spinner w-8 h-8"></span>
-      </div>
+      <div class="flex justify-center py-16"><span class="spinner w-8 h-8"></span></div>
     } @else if (notifications().length === 0) {
       <div class="card text-center py-12">
         <div class="text-4xl mb-3">🔔</div>
@@ -32,16 +30,20 @@ import { NotificationResponse } from '../../core/models/notification.model';
     } @else {
       <div class="space-y-2">
         @for (n of notifications(); track n.id) {
-          <div [class]="n.isRead ? 'bg-white' : 'bg-blue-50 border-blue-200'"
-               class="flex items-start gap-4 p-4 rounded-xl border border-slate-200 cursor-pointer hover:shadow-card-hover transition-shadow"
+          <div [class]="n.isRead ? 'bg-white border-slate-200' : 'bg-blue-50 border-blue-200'"
+               class="flex items-start gap-4 p-4 rounded-xl border cursor-pointer hover:shadow-card-hover transition-shadow"
                (click)="markRead(n)">
-            <div [class]="badgeClass(n.type)"
-                 class="badge shrink-0 mt-0.5">{{ n.type }}</div>
+            <span [class]="badgeClass(n.type)" class="badge shrink-0 mt-0.5">{{ n.type }}</span>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold text-slate-900">{{ n.title }}</p>
               <p class="text-sm text-slate-500 mt-0.5">{{ n.message }}</p>
             </div>
-            <span class="text-xs text-slate-400 shrink-0">{{ timeAgo(n.createdAt) }}</span>
+            <div class="flex items-center gap-2 shrink-0">
+              @if (!n.isRead) {
+                <div class="w-2 h-2 rounded-full bg-primary-500"></div>
+              }
+              <span class="text-xs text-slate-400">{{ timeAgo(n.createdAt) }}</span>
+            </div>
           </div>
         }
       </div>
@@ -50,16 +52,17 @@ import { NotificationResponse } from '../../core/models/notification.model';
 })
 export class NotificationsComponent implements OnInit {
   notifications = signal<NotificationResponse[]>([]);
-  loading = signal(true);
-  unreadCount = signal(0);
+  loading       = signal(true);
+  unreadCount   = signal(0);
 
   constructor(private svc: NotificationService) {}
 
   ngOnInit() {
     this.svc.getMyNotifications().subscribe({
       next: res => {
-        this.notifications.set(res.data?.content ?? []);
-        this.unreadCount.set((res.data?.content ?? []).filter((n: NotificationResponse) => !n.isRead).length);
+        const list = res.data?.content ?? [];
+        this.notifications.set(list);
+        this.unreadCount.set(list.filter((n: NotificationResponse) => !n.isRead).length);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -89,6 +92,7 @@ export class NotificationsComponent implements OnInit {
   }
 
   timeAgo(dateStr: string): string {
+    if (!dateStr) return '';
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return `${mins}m ago`;

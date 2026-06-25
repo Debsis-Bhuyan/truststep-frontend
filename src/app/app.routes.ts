@@ -5,31 +5,43 @@ import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout.component
 import { MainLayoutComponent } from './layouts/main-layout/main-layout.component';
 
 export const routes: Routes = [
-  // Auth
+
+  /* ── Public landing page ─────────────────────────────── */
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent)
+  },
+
+  /* ── Auth screens ────────────────────────────────────── */
   {
     path: '',
     component: AuthLayoutComponent,
     children: [
-      { path: '', redirectTo: 'login', pathMatch: 'full' },
-      { path: 'login',          loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
-      { path: 'register',       loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent) },
-      { path: 'forgot-password',loadComponent: () => import('./features/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent) },
+      { path: 'login',           loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
+      { path: 'register',        loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent) },
+      { path: 'forgot-password', loadComponent: () => import('./features/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent) },
     ]
   },
 
-  // Authenticated shell
+  /* ── Authenticated shell ─────────────────────────────── */
   {
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],
     children: [
-      // Notifications — all roles
+
+      /* Shared — all roles */
       {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications.component').then(m => m.NotificationsComponent)
       },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
+      },
 
-      // Borrower routes
+      /* ── Borrower ───────────────────────────────────── */
       {
         path: 'borrower',
         canActivate: [roleGuard], data: { roles: ['BORROWER', 'ADMIN'] },
@@ -48,22 +60,23 @@ export const routes: Routes = [
         ]
       },
 
-      // Manager routes
+      /* ── Manager ────────────────────────────────────── */
       {
         path: 'manager',
         canActivate: [roleGuard], data: { roles: ['MANAGER', 'ADMIN'] },
         children: [
           { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-          { path: 'dashboard',               loadComponent: () => import('./features/manager/dashboard/manager-dashboard.component').then(m => m.ManagerDashboardComponent) },
-          { path: 'loans',                   loadComponent: () => import('./features/manager/loan-list/loan-list.component').then(m => m.LoanListComponent) },
-          { path: 'approvals',               loadComponent: () => import('./features/manager/review-emergency/review-emergency.component').then(m => m.ReviewEmergencyComponent) },
-          { path: 'loans/:id/review',        loadComponent: () => import('./features/manager/review-sanction/review-sanction.component').then(m => m.ReviewSanctionComponent) },
-          { path: 'review-proof/:loanId',    loadComponent: () => import('./features/manager/review-proof/review-proof.component').then(m => m.ReviewProofComponent) },
-          { path: 'review-emergency/:loanId',loadComponent: () => import('./features/manager/review-emergency/review-emergency.component').then(m => m.ReviewEmergencyComponent) },
+          { path: 'dashboard',                loadComponent: () => import('./features/manager/dashboard/manager-dashboard.component').then(m => m.ManagerDashboardComponent) },
+          { path: 'loans',                    loadComponent: () => import('./features/manager/loan-list/loan-list.component').then(m => m.LoanListComponent) },
+          { path: 'loans/:id/review',         loadComponent: () => import('./features/manager/review-sanction/review-sanction.component').then(m => m.ReviewSanctionComponent) },
+          { path: 'approvals',                loadComponent: () => import('./features/manager/review-proof/review-proof.component').then(m => m.ReviewProofComponent) },
+          { path: 'review-proof/:loanId',     loadComponent: () => import('./features/manager/review-proof/review-proof.component').then(m => m.ReviewProofComponent) },
+          { path: 'review-emergency',         loadComponent: () => import('./features/manager/review-emergency/review-emergency.component').then(m => m.ReviewEmergencyComponent) },
+          { path: 'review-emergency/:loanId', loadComponent: () => import('./features/manager/review-emergency/review-emergency.component').then(m => m.ReviewEmergencyComponent) },
         ]
       },
 
-      // Admin routes
+      /* ── Admin ──────────────────────────────────────── */
       {
         path: 'admin',
         canActivate: [roleGuard], data: { roles: ['ADMIN'] },
@@ -78,6 +91,6 @@ export const routes: Routes = [
     ]
   },
 
-  // Fallback
-  { path: '**', redirectTo: '/login' }
+  /* ── Fallback ────────────────────────────────────────── */
+  { path: '**', redirectTo: '' }
 ];

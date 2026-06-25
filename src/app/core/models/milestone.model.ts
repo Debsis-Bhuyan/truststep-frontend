@@ -1,10 +1,19 @@
 export type MilestoneStatus =
-  | 'PENDING' | 'IN_PROGRESS' | 'PROOF_SUBMITTED' | 'APPROVED' | 'PARTIALLY_APPROVED' | 'REJECTED' | 'COMPLETED';
+  | 'PENDING' | 'IN_PROGRESS' | 'PROOF_SUBMITTED'
+  | 'APPROVED' | 'PARTIALLY_APPROVED' | 'REJECTED' | 'COMPLETED';
+
+export type ApprovalDecision = 'APPROVED' | 'PARTIALLY_APPROVED' | 'REJECTED';
+export type ReallocationPurpose = 'FORWARD_DRAW' | 'EMERGENCY_BORROW';
+export type ReallocationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+/* ── Milestone ─────────────────────────────────────────── */
 
 export interface MilestoneRequest {
   description: string;
-  amount: number;
-  isLast: boolean;
+  allocatedAmount: number;
+  isLastMilestone: boolean;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
 }
 
 export interface BulkMilestoneRequest {
@@ -12,60 +21,112 @@ export interface BulkMilestoneRequest {
 }
 
 export interface MilestoneResponse {
-  id: number;
+  milestoneId: number;
   loanId: number;
-  sequenceNumber: number;
+  phaseNumber: number;
   description: string;
-  amount: number;
+  isLastMilestone: boolean;
+  originalAmount: number;
+  allocatedAmount: number;
   retentionAmount: number;
+  releasableAmount: number;
+  disbursedAmount: number;
+  forwardDrawnAmount: number;
+  forwardDrawUsed: boolean;
+  plannedStartDate: string;
+  plannedEndDate: string;
+  actualCompletionDate: string;
   status: MilestoneStatus;
-  isLast: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
+/* ── Proof ─────────────────────────────────────────────── */
+
+export type ProofType = 'PHOTO' | 'INVOICE' | 'RECEIPT' | 'OTHER';
+
 export interface MilestoneProofRequest {
-  noteToManager: string;
+  milestoneId: number;
+  loanId: number;
+  submittedById: number;
+  proofType: ProofType;
+  fileName: string;
+  fileUrl: string;
+  fileSizeKb?: number;
+  description?: string;
 }
 
 export interface MilestoneProofResponse {
-  id: number;
+  proofId: number;
   milestoneId: number;
-  photoUrl: string;
-  invoiceUrl: string;
-  note: string;
+  loanId: number;
+  submittedById: number;
+  submittedByName: string;
+  proofType: ProofType;
+  fileName: string;
+  fileUrl: string;
+  fileSizeKb: number;
+  description: string;
   submittedAt: string;
 }
 
+/* ── Approval ──────────────────────────────────────────── */
+
 export interface MilestoneApprovalRequest {
-  decision: 'APPROVED' | 'PARTIALLY_APPROVED' | 'REJECTED';
+  milestoneId: number;
+  loanId: number;
+  reviewedById: number;
+  decision: ApprovalDecision;
   amountToRelease: number;
-  remarks: string;
+  remarks?: string;
+  rejectionReason?: string;
+  resubmissionAllowed?: boolean;
+  resubmissionDeadline?: string;
 }
 
 export interface MilestoneApprovalResponse {
-  id: number;
+  approvalId: number;
   milestoneId: number;
-  managerId: number;
-  decision: string;
-  amountReleased: number;
+  loanId: number;
+  reviewedById: number;
+  reviewedByName: string;
+  decision: ApprovalDecision;
+  amountToRelease: number;
   remarks: string;
-  approvedAt: string;
+  rejectionReason: string;
+  resubmissionAllowed: boolean;
+  resubmissionDeadline: string;
+  reviewedAt: string;
 }
 
+/* ── Reallocation ──────────────────────────────────────── */
+
 export interface MilestoneReallocationRequest {
+  loanId: number;
+  requestedById: number;
+  purpose: ReallocationPurpose;
   fromMilestoneId: number;
-  toMilestoneId: number;
+  toMilestoneId?: number;
   amount: number;
-  purpose: 'FORWARD_DRAW' | 'EMERGENCY_BORROW';
   reason: string;
+  proofUrl?: string;
 }
 
 export interface MilestoneReallocationResponse {
-  id: number;
+  reallocationId: number;
+  loanId: number;
+  requestedById: number;
+  requestedByName: string;
+  approvedById: number;
+  approvedByName: string;
+  purpose: ReallocationPurpose;
   fromMilestoneId: number;
   toMilestoneId: number;
   amount: number;
-  purpose: string;
   reason: string;
-  status: string;
-  createdAt: string;
+  proofUrl: string;
+  status: ReallocationStatus;
+  managerRemarks: string;
+  requestedAt: string;
+  decidedAt: string;
 }

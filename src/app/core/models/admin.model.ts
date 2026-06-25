@@ -4,6 +4,14 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
 export interface UserManagementResponse {
   id: number;
   fullName: string;
@@ -16,7 +24,7 @@ export interface UserManagementResponse {
 export interface SystemConfigResponse {
   id: number;
   baseInterestRate: number;
-  moratoriumRate: number;
+  moratoriumInterestRate: number;
   retentionPercent: number;
   moratoriumMonths: number;
   forwardDrawCapPercent: number;
@@ -27,20 +35,24 @@ export interface SystemConfigResponse {
 
 export interface SystemConfigRequest {
   baseInterestRate: number;
-  moratoriumRate: number;
+  moratoriumInterestRate: number;
   retentionPercent: number;
   moratoriumMonths: number;
   forwardDrawCapPercent: number;
 }
 
 export interface AuditLogResponse {
-  id: number;
-  userId: number;
-  userName: string;
+  logId: number;
   tableName: string;
+  recordId: number;
   action: string;
+  oldValues: string;
+  newValues: string;
+  changedById: number;
+  changedByName: string;
   ipAddress: string;
-  createdAt: string;
+  userAgent: string;
+  changedAt: string;
 }
 
 export interface AdminDashboardResponse {
@@ -48,12 +60,4 @@ export interface AdminDashboardResponse {
   activeLoans: number;
   totalManagers: number;
   inactiveUsers: number;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
 }

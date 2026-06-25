@@ -1,12 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { LoanService } from '../../../core/services/loan.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { DocumentService } from '../../../core/services/document.service';
+import { MilestoneService } from '../../../core/services/milestone.service';
 import { LoanResponse } from '../../../core/models/loan.model';
-import { LoanDocumentResponse } from '../../../core/models/document.model';
 
 @Component({
   selector: 'app-review-sanction',
@@ -17,6 +16,7 @@ import { LoanDocumentResponse } from '../../../core/models/document.model';
 
     <div class="page-header">
       <h1 class="page-title">Review & Sanction Loan</h1>
+      <p class="page-subtitle">Verify KYC documents and sanction or reject the loan application</p>
     </div>
 
     @if (loading()) {
@@ -25,88 +25,76 @@ import { LoanDocumentResponse } from '../../../core/models/document.model';
       <div class="card text-center py-10 text-slate-500">Loan not found.</div>
     } @else {
       <div class="max-w-4xl grid sm:grid-cols-2 gap-4">
-        <!-- Application -->
+        <!-- Application summary -->
         <div class="card">
           <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Application</h2>
           <dl class="space-y-2.5 text-sm">
             <div class="flex justify-between"><dt class="text-slate-500">Borrower</dt><dd class="font-medium">{{ loan()!.borrowerName }}</dd></div>
-            <div class="flex justify-between"><dt class="text-slate-500">Amount</dt><dd class="font-medium">{{ inr(loan()!.loanAmount) }}</dd></div>
-            <div class="flex justify-between"><dt class="text-slate-500">Purpose</dt><dd class="font-medium">{{ loan()!.purpose }}</dd></div>
-            <div class="flex justify-between"><dt class="text-slate-500">Tenure</dt><dd class="font-medium">{{ loan()!.tenureMonths }} months</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Loan #</dt><dd class="font-mono text-xs">{{ loan()!.loanNumber }}</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Amount</dt><dd class="font-bold text-primary-700">{{ inr(loan()!.totalApprovedAmount) }}</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Type</dt><dd>{{ loan()!.loanType }}</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Purpose</dt><dd class="text-right max-w-36">{{ loan()!.purpose }}</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Tenure</dt><dd>{{ loan()!.tenureMonths }} months</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Status</dt>
+              <dd><span class="badge badge-amber">{{ loan()!.status }}</span></dd>
+            </div>
           </dl>
         </div>
 
-        <!-- KYC Docs -->
-        <div class="card">
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">KYC Documents</h2>
-          <div class="space-y-2">
-            @for (d of docs(); track d.id) {
-              <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <span class="text-sm text-slate-700">{{ d.docType }}</span>
-                <div class="flex items-center gap-2">
-                  <span [class]="d.status === 'VERIFIED' ? 'badge-green' : 'badge-amber'" class="badge text-xs">{{ d.status }}</span>
-                  <a [href]="d.fileUrl" target="_blank" class="text-xs text-primary-600 hover:underline">View</a>
+        <!-- On sanction preview -->
+        <div class="space-y-4">
+          <div class="card bg-primary-50 border-primary-100">
+            <h2 class="text-xs font-semibold text-primary-700 uppercase tracking-wide mb-2">On Sanction</h2>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-500">Milestone fund (80%)</span>
+                <span class="font-bold text-primary-800">{{ inr(loan()!.totalApprovedAmount * 0.8) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Emergency fund (20%)</span>
+                <span class="font-bold text-emerald-700">{{ inr(loan()!.totalApprovedAmount * 0.2) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sanction form -->
+          <div class="card">
+            <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Decision</h2>
+
+            @if (msg()) {
+              <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4 text-emerald-700 text-sm">✅ {{ msg() }}</div>
+            }
+            @if (error()) { <div class="warning-bar mb-4">⚠️ {{ error() }}</div> }
+
+            <form [formGroup]="form" class="space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="form-label text-xs">Interest rate (%)</label>
+                  <input formControlName="interestRate" type="number" step="0.1" class="form-input text-sm" placeholder="11.5">
+                </div>
+                <div>
+                  <label class="form-label text-xs">Tenure (months)</label>
+                  <input formControlName="tenureMonths" type="number" class="form-input text-sm">
                 </div>
               </div>
-            }
-            @if (docs().length === 0) {
-              <p class="text-sm text-slate-400">No documents uploaded yet.</p>
-            }
-          </div>
-          <p class="text-xs text-slate-400 mt-3 info-bar">ℹ️ PAN unmask is logged in the audit trail.</p>
-        </div>
-      </div>
-
-      <!-- On sanction preview -->
-      <div class="max-w-4xl mt-4">
-        <div class="card bg-primary-50 border-primary-100">
-          <h2 class="text-xs font-semibold text-primary-700 uppercase tracking-wide mb-2">On Sanction</h2>
-          <div class="flex gap-6 text-sm">
-            <div>
-              <p class="text-slate-500">Milestone fund (80%)</p>
-              <p class="text-xl font-bold text-primary-800">{{ inr(loan()!.loanAmount * 0.8) }}</p>
-            </div>
-            <div>
-              <p class="text-slate-500">Emergency fund (20%)</p>
-              <p class="text-xl font-bold text-emerald-700">{{ inr(loan()!.loanAmount * 0.2) }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sanction form -->
-      <div class="max-w-4xl mt-4">
-        <div class="card">
-          @if (msg()) { <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4 text-emerald-700 text-sm">✅ {{ msg() }}</div> }
-          @if (error()) { <div class="warning-bar mb-4">⚠️ {{ error() }}</div> }
-
-          <form [formGroup]="form" class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="form-label">Interest rate (%)</label>
-                <input formControlName="interestRate" type="number" class="form-input" placeholder="11.5">
+                <label class="form-label text-xs">Remarks</label>
+                <textarea formControlName="remarks" class="form-input resize-none min-h-[60px] text-sm"
+                          placeholder="Optional remarks…"></textarea>
               </div>
-              <div>
-                <label class="form-label">Tenure (months)</label>
-                <input formControlName="tenureMonths" type="number" class="form-input">
-              </div>
-            </div>
-            <div>
-              <label class="form-label">Remarks</label>
-              <textarea formControlName="remarks" class="form-input resize-none min-h-[60px]" placeholder="Optional remarks…"></textarea>
-            </div>
 
-            <div class="flex gap-3">
-              <button type="button" class="btn-success flex-1" [disabled]="actioning()" (click)="sanction()">
-                @if (actioning() === 'sanction') { <span class="spinner w-4 h-4"></span> }
-                Sanction loan
-              </button>
-              <button type="button" class="btn-danger" [disabled]="actioning()" (click)="reject()">
-                @if (actioning() === 'reject') { <span class="spinner w-4 h-4"></span> }
-                Reject
-              </button>
-            </div>
-          </form>
+              <div class="flex gap-3 pt-1">
+                <button type="button" class="btn-success flex-1" [disabled]="actioning()" (click)="sanction()">
+                  @if (actioning() === 'sanction') { <span class="spinner w-4 h-4"></span> }
+                  Sanction loan
+                </button>
+                <button type="button" class="btn-danger px-5" [disabled]="actioning()" (click)="reject()">
+                  @if (actioning() === 'reject') { <span class="spinner w-4 h-4"></span> }
+                  Reject
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     }
@@ -115,16 +103,15 @@ import { LoanDocumentResponse } from '../../../core/models/document.model';
 export class ReviewSanctionComponent implements OnInit {
   form: FormGroup;
   loan = signal<LoanResponse | null>(null);
-  docs = signal<LoanDocumentResponse[]>([]);
-  loading = signal(true);
+  loading  = signal(true);
   actioning = signal<string | null>(null);
-  msg = signal('');
+  msg   = signal('');
   error = signal('');
   private loanId = 0;
 
   constructor(private fb: FormBuilder, private loanSvc: LoanService,
-              private docSvc: DocumentService, private auth: AuthService,
-              private route: ActivatedRoute, private router: Router) {
+              private auth: AuthService, private route: ActivatedRoute,
+              private mSvc: MilestoneService) {
     this.form = this.fb.group({
       interestRate:  [11.5, [Validators.required, Validators.min(0)]],
       tenureMonths:  [24,   [Validators.required, Validators.min(1)]],
@@ -138,7 +125,6 @@ export class ReviewSanctionComponent implements OnInit {
       next: res => {
         this.loan.set(res.data);
         this.form.patchValue({ tenureMonths: res.data.tenureMonths });
-        this.docSvc.getByLoan(this.loanId).subscribe(r => { this.docs.set(r.data ?? []); });
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -150,7 +136,7 @@ export class ReviewSanctionComponent implements OnInit {
     this.actioning.set('sanction');
     const managerId = this.auth.currentUser()!.id;
     this.loanSvc.sanctionLoan(this.loanId, managerId, this.form.value).subscribe({
-      next: () => { this.msg.set('Loan sanctioned successfully!'); this.actioning.set(null); },
+      next: () => { this.msg.set('Loan sanctioned successfully! Milestone fund and emergency fund have been allocated.'); this.actioning.set(null); },
       error: e => { this.error.set(e.error?.message ?? 'Sanction failed'); this.actioning.set(null); }
     });
   }

@@ -11,20 +11,21 @@ import { AuditLogResponse } from '../../../core/models/admin.model';
   template: `
     <div class="page-header">
       <h1 class="page-title">Audit Log</h1>
-      <p class="page-subtitle">Immutable trail of all changes; filter by user, table, action, date</p>
+      <p class="page-subtitle">Immutable trail of all changes · filter by user, table, action, date</p>
     </div>
 
-    <!-- Filters -->
     <div class="card mb-4">
       <div class="flex flex-wrap gap-3 items-center">
-        <select [(ngModel)]="actionFilter" (ngModelChange)="load()" class="form-select w-36">
+        <select [(ngModel)]="actionFilter" (ngModelChange)="filter()" class="form-select w-44">
           <option value="">Action ▼</option>
           <option value="INSERT">INSERT</option>
           <option value="UPDATE">UPDATE</option>
+          <option value="DELETE">DELETE</option>
           <option value="VIEW_SENSITIVE">VIEW_SENSITIVE</option>
         </select>
-        <input [(ngModel)]="dateRange" class="form-input w-44" type="date" placeholder="Date range">
-        <button class="btn-primary" (click)="load()">Filter</button>
+        <input [(ngModel)]="tableFilter" (ngModelChange)="filter()" class="form-input w-44"
+               placeholder="Table name…">
+        <button class="btn-primary" (click)="load()">Refresh</button>
       </div>
     </div>
 
@@ -34,22 +35,21 @@ import { AuditLogResponse } from '../../../core/models/admin.model';
       <div class="table-wrapper">
         <table class="ts-table">
           <thead><tr>
-            <th>Time</th><th>User</th><th>Table</th><th>Action</th><th>IP</th>
+            <th>Time</th><th>User</th><th>Table</th><th>Record</th><th>Action</th><th>IP</th>
           </tr></thead>
           <tbody>
-            @for (log of logs(); track log.id) {
+            @for (log of displayed(); track log.logId) {
               <tr>
-                <td class="text-xs text-slate-500 whitespace-nowrap">{{ fmtTime(log.createdAt) }}</td>
-                <td class="font-medium">{{ log.userName }}</td>
-                <td class="font-mono text-xs">{{ log.tableName }}</td>
-                <td>
-                  <span [class]="actionBadge(log.action)" class="badge">{{ log.action }}</span>
-                </td>
+                <td class="text-xs text-slate-500 whitespace-nowrap">{{ fmtTime(log.changedAt) }}</td>
+                <td class="font-medium">{{ log.changedByName || '—' }}</td>
+                <td class="font-mono text-xs text-slate-600">{{ log.tableName }}</td>
+                <td class="text-xs text-slate-400">{{ log.recordId }}</td>
+                <td><span [class]="actionBadge(log.action)" class="badge text-xs">{{ log.action }}</span></td>
                 <td class="font-mono text-xs text-slate-400">{{ log.ipAddress || '—' }}</td>
               </tr>
             }
             @empty {
-              <tr><td colspan="5" class="text-center py-10 text-slate-400">No audit records found</td></tr>
+              <tr><td colspan="6" class="text-center py-10 text-slate-400">No audit records found</td></tr>
             }
           </tbody>
         </table>
@@ -70,10 +70,11 @@ import { AuditLogResponse } from '../../../core/models/admin.model';
   `
 })
 export class AuditLogComponent implements OnInit {
-  logs = signal<AuditLogResponse[]>([]);
-  loading = signal(true);
+  logs      = signal<AuditLogResponse[]>([]);
+  displayed = signal<AuditLogResponse[]>([]);
+  loading   = signal(true);
   actionFilter = '';
-  dateRange = '';
+  tableFilter  = '';
   page = 0;
   totalPages = 1;
 
@@ -87,21 +88,28 @@ export class AuditLogComponent implements OnInit {
     this.loading.set(true);
     this.svc.getAuditLogs(this.page, 20).subscribe({
       next: res => {
-        let list = res.data?.content ?? [];
-        if (this.actionFilter) list = list.filter(l => l.action === this.actionFilter);
-        this.logs.set(list);
+        this.logs.set(res.data?.content ?? []);
         this.totalPages = res.data?.totalPages ?? 1;
+        this.filter();
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
     });
   }
 
+  filter() {
+    let list = this.logs();
+    if (this.actionFilter) list = list.filter(l => l.action === this.actionFilter);
+    if (this.tableFilter)  list = list.filter(l => l.tableName?.toLowerCase().includes(this.tableFilter.toLowerCase()));
+    this.displayed.set(list);
+  }
+
   actionBadge(a: string) {
-    return { INSERT: 'badge-green', UPDATE: 'badge-amber', VIEW_SENSITIVE: 'badge-red' }[a] ?? 'badge-slate';
+    return { INSERT: 'badge-green', UPDATE: 'badge-amber', DELETE: 'badge-red', VIEW_SENSITIVE: 'badge-purple' }[a] ?? 'badge-slate';
   }
 
   fmtTime(d: string) {
-    return new Date(d).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
+    if (!d) return '—';
+    return new Date(d).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short', year: '2-digit' });
   }
 }

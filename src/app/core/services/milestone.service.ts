@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/admin.model';
 import {
   BulkMilestoneRequest, MilestoneResponse,
   MilestoneApprovalRequest, MilestoneApprovalResponse,
-  MilestoneProofResponse, MilestoneReallocationRequest, MilestoneReallocationResponse
+  MilestoneProofRequest, MilestoneProofResponse,
+  MilestoneReallocationRequest, MilestoneReallocationResponse,
+  ReallocationStatus
 } from '../models/milestone.model';
 import { environment } from '../../../environments/environment';
 
@@ -15,38 +17,77 @@ export class MilestoneService {
 
   constructor(private http: HttpClient) {}
 
+  /* ── Milestones: /api/loans/{loanId}/milestones ──────── */
+
   saveMilestones(loanId: number, req: BulkMilestoneRequest): Observable<ApiResponse<MilestoneResponse[]>> {
-    return this.http.post<ApiResponse<MilestoneResponse[]>>(`${this.base}/milestones/bulk/${loanId}`, req);
+    return this.http.post<ApiResponse<MilestoneResponse[]>>(
+      `${this.base}/loans/${loanId}/milestones/bulk`, req);
   }
 
   getMilestonesByLoan(loanId: number): Observable<ApiResponse<MilestoneResponse[]>> {
-    return this.http.get<ApiResponse<MilestoneResponse[]>>(`${this.base}/milestones/loan/${loanId}`);
+    return this.http.get<ApiResponse<MilestoneResponse[]>>(
+      `${this.base}/loans/${loanId}/milestones`);
   }
 
-  getMilestoneById(id: number): Observable<ApiResponse<MilestoneResponse>> {
-    return this.http.get<ApiResponse<MilestoneResponse>>(`${this.base}/milestones/${id}`);
+  getMilestoneById(loanId: number, milestoneId: number): Observable<ApiResponse<MilestoneResponse>> {
+    return this.http.get<ApiResponse<MilestoneResponse>>(
+      `${this.base}/loans/${loanId}/milestones/${milestoneId}`);
   }
 
-  submitProof(milestoneId: number, formData: FormData): Observable<ApiResponse<MilestoneProofResponse>> {
-    return this.http.post<ApiResponse<MilestoneProofResponse>>(`${this.base}/milestone-proofs/${milestoneId}`, formData);
+  /* ── Proofs: /api/milestones/{milestoneId}/proofs ─────── */
+
+  submitProof(milestoneId: number, req: MilestoneProofRequest): Observable<ApiResponse<MilestoneProofResponse>> {
+    return this.http.post<ApiResponse<MilestoneProofResponse>>(
+      `${this.base}/milestones/${milestoneId}/proofs`, req);
   }
 
-  getProofByMilestone(milestoneId: number): Observable<ApiResponse<MilestoneProofResponse>> {
-    return this.http.get<ApiResponse<MilestoneProofResponse>>(`${this.base}/milestone-proofs/milestone/${milestoneId}`);
+  getProofsByMilestone(milestoneId: number): Observable<ApiResponse<MilestoneProofResponse[]>> {
+    return this.http.get<ApiResponse<MilestoneProofResponse[]>>(
+      `${this.base}/milestones/${milestoneId}/proofs`);
   }
 
-  reviewMilestone(milestoneId: number, managerId: number, req: MilestoneApprovalRequest): Observable<ApiResponse<MilestoneApprovalResponse>> {
+  getProofsByLoan(loanId: number): Observable<ApiResponse<MilestoneProofResponse[]>> {
+    return this.http.get<ApiResponse<MilestoneProofResponse[]>>(
+      `${this.base}/milestones/0/proofs/loan/${loanId}`);
+  }
+
+  /* ── Approvals: /api/milestones/{milestoneId}/approvals ─ */
+
+  reviewMilestone(milestoneId: number, req: MilestoneApprovalRequest): Observable<ApiResponse<MilestoneApprovalResponse>> {
     return this.http.post<ApiResponse<MilestoneApprovalResponse>>(
-      `${this.base}/milestone-approvals/${milestoneId}?managerId=${managerId}`, req);
+      `${this.base}/milestones/${milestoneId}/approvals`, req);
   }
 
-  requestReallocation(loanId: number, req: MilestoneReallocationRequest): Observable<ApiResponse<MilestoneReallocationResponse>> {
-    return this.http.post<ApiResponse<MilestoneReallocationResponse>>(`${this.base}/milestone-reallocations/${loanId}`, req);
+  getApprovalsByMilestone(milestoneId: number): Observable<ApiResponse<MilestoneApprovalResponse[]>> {
+    return this.http.get<ApiResponse<MilestoneApprovalResponse[]>>(
+      `${this.base}/milestones/${milestoneId}/approvals`);
   }
 
-  approveReallocation(id: number, managerId: number, approve: boolean): Observable<ApiResponse<MilestoneReallocationResponse>> {
-    const action = approve ? 'approve' : 'reject';
+  getApprovalsByLoan(loanId: number): Observable<ApiResponse<MilestoneApprovalResponse[]>> {
+    return this.http.get<ApiResponse<MilestoneApprovalResponse[]>>(
+      `${this.base}/milestones/0/approvals/loan/${loanId}`);
+  }
+
+  /* ── Reallocations: /api/reallocations ───────────────── */
+
+  requestReallocation(req: MilestoneReallocationRequest): Observable<ApiResponse<MilestoneReallocationResponse>> {
     return this.http.post<ApiResponse<MilestoneReallocationResponse>>(
-      `${this.base}/milestone-reallocations/${id}/${action}?managerId=${managerId}`, {});
+      `${this.base}/reallocations`, req);
+  }
+
+  getPendingReallocations(): Observable<ApiResponse<MilestoneReallocationResponse[]>> {
+    return this.http.get<ApiResponse<MilestoneReallocationResponse[]>>(
+      `${this.base}/reallocations/pending`);
+  }
+
+  getReallocationsByLoan(loanId: number): Observable<ApiResponse<MilestoneReallocationResponse[]>> {
+    return this.http.get<ApiResponse<MilestoneReallocationResponse[]>>(
+      `${this.base}/reallocations/loan/${loanId}`);
+  }
+
+  decideReallocation(id: number, decision: ReallocationStatus, managerRemarks?: string): Observable<ApiResponse<MilestoneReallocationResponse>> {
+    const params = new HttpParams().set('decision', decision);
+    return this.http.patch<ApiResponse<MilestoneReallocationResponse>>(
+      `${this.base}/reallocations/${id}/decide`, { managerRemarks }, { params });
   }
 }

@@ -21,7 +21,7 @@ import { LoanResponse } from '../../../core/models/loan.model';
       <div class="card">
         @if (success()) {
           <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-4 text-emerald-700 text-sm">
-            ✅ Request sent to manager. Manager approval is required before funds are released.
+            ✅ Request sent to manager. Funds will be released after approval.
           </div>
         }
         @if (error()) { <div class="warning-bar mb-4">⚠️ {{ error() }}</div> }
@@ -39,10 +39,15 @@ import { LoanResponse } from '../../../core/models/loan.model';
             <label class="form-label">Borrow from milestone</label>
             <select formControlName="fromMilestoneId" class="form-select">
               <option value="">Select future milestone…</option>
-              @for (m of futureMilestones(); track m.id) {
-                <option [value]="m.id">M{{ m.sequenceNumber }} · {{ m.description }} ({{ inr(m.amount) }})</option>
+              @for (m of futureMilestones(); track m.milestoneId) {
+                <option [value]="m.milestoneId">
+                  M{{ m.phaseNumber }} · {{ m.description }} ({{ inr(m.allocatedAmount) }})
+                </option>
               }
             </select>
+            @if (form.get('fromMilestoneId')?.invalid && form.get('fromMilestoneId')?.touched) {
+              <p class="form-error">Select a milestone</p>
+            }
           </div>
 
           <div>
@@ -55,15 +60,8 @@ import { LoanResponse } from '../../../core/models/loan.model';
           </div>
 
           <div>
-            <label class="form-label">Proof <span class="badge-slate ml-1 text-xs">optional</span></label>
-            <div class="drop-zone" (click)="proofInput.click()">
-              @if (proofFile) {
-                <p class="text-sm text-primary-700">📎 {{ proofFile.name }}</p>
-              } @else {
-                <p class="text-sm text-slate-400">Attach file (optional)</p>
-              }
-              <input #proofInput type="file" class="hidden" (change)="onFile($event)">
-            </div>
+            <label class="form-label">Proof URL <span class="badge-slate ml-1 text-xs">optional</span></label>
+            <input formControlName="proofUrl" class="form-input" placeholder="Link to proof document…">
           </div>
 
           <div class="info-bar">
@@ -85,16 +83,15 @@ export class MilestoneTopupComponent implements OnInit {
   loading = signal(false);
   error = signal('');
   success = signal(false);
-  proofFile: File | null = null;
   private loanId: number | null = null;
-  private currentMilestoneId: number | null = null;
 
   constructor(private fb: FormBuilder, private mSvc: MilestoneService,
               private loanSvc: LoanService, private auth: AuthService) {
     this.form = this.fb.group({
       amount:          [null, [Validators.required, Validators.min(1)]],
       fromMilestoneId: ['',   Validators.required],
-      reason:          ['',   Validators.required]
+      reason:          ['',   Validators.required],
+      proofUrl:        ['']
     });
   }
 
@@ -104,30 +101,25 @@ export class MilestoneTopupComponent implements OnInit {
     this.loanSvc.getLoansByBorrower(uid).subscribe(res => {
       const loan = res.data?.find((l: LoanResponse) => ['ACTIVE', 'MORATORIUM'].includes(l.status));
       if (!loan) return;
-      this.loanId = loan.id;
-      this.mSvc.getMilestonesByLoan(loan.id).subscribe(r => {
-        const all = r.data ?? [];
-        const current = all.find((m: MilestoneResponse) => m.status === 'IN_PROGRESS');
-        this.currentMilestoneId = current?.id ?? null;
-        this.futureMilestones.set(all.filter((m: MilestoneResponse) => m.status === 'PENDING'));
+      this.loanId = loan.loanId;
+      this.mSvc.getMilestonesByLoan(loan.loanId).subscribe(r => {
+        this.futureMilestones.set((r.data ?? []).filter((m: MilestoneResponse) => m.status === 'PENDING'));
       });
     });
   }
 
-  onFile(e: Event) {
-    this.proofFile = (e.target as HTMLInputElement).files?.[0] ?? null;
-  }
-
   submit() {
     if (this.form.invalid || !this.loanId) { this.form.markAllAsTouched(); return; }
-    this.loading.set(true);
-    this.error.set('');
-    const { amount, fromMilestoneId, reason } = this.form.value;
-    this.mSvc.requestReallocation(this.loanId, {
+    this.loading.set(true); this.error.set('');
+    const { amount, fromMilestoneId, reason, proofUrl } = this.form.value;
+    this.mSvc.requestReallocation({
+      loanId:          this.loanId!,
+      requestedById:   this.auth.currentUser()!.id,
+      purpose:         'EMERGENCY_BORROW',
       fromMilestoneId: +fromMilestoneId,
-      toMilestoneId:   this.currentMilestoneId ?? +fromMilestoneId,
-      amount, reason,
-      purpose: 'EMERGENCY_BORROW'
+      amount,
+      reason,
+      proofUrl:        proofUrl || undefined
     }).subscribe({
       next: () => { this.success.set(true); this.loading.set(false); this.form.reset(); },
       error: e => { this.error.set(e.error?.message ?? 'Request failed'); this.loading.set(false); }

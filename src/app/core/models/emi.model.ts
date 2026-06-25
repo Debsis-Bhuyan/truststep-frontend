@@ -1,14 +1,28 @@
 export type EmiStatus = 'UPCOMING' | 'DUE' | 'PAID' | 'OVERDUE';
 
 export interface EmiScheduleResponse {
-  id: number;
+  emiId: number;
   loanId: number;
   emiNumber: number;
   dueDate: string;
   emiAmount: number;
-  principal: number;
-  interest: number;
-  penalty: number;
+  principalPart: number;
+  interestPart: number;
+  openingBalance: number;
+  closingBalance: number;
+  paidAmount: number;
+  paidOn: string;
+  paymentMethod: string;
+  daysOverdue: number;
+  penaltyAmount: number;
+  penaltyRate: number;
   status: EmiStatus;
-  paidAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmiPayRequest {
+  paidAmount: number;
+  paidOn?: string;
+  paymentMethod?: string;
 }

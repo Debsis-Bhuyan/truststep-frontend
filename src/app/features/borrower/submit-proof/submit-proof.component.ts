@@ -4,7 +4,8 @@ import { CommonModule } from '@angular/common';
 import { MilestoneService } from '../../../core/services/milestone.service';
 import { LoanService } from '../../../core/services/loan.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { MilestoneResponse } from '../../../core/models/milestone.model';
+import { MilestoneResponse, ProofType } from '../../../core/models/milestone.model';
+import { LoanResponse } from '../../../core/models/loan.model';
 
 @Component({
   selector: 'app-submit-proof',
@@ -13,20 +14,21 @@ import { MilestoneResponse } from '../../../core/models/milestone.model';
   template: `
     <div class="page-header">
       <h1 class="page-title">Submit Milestone Proof</h1>
-      <p class="page-subtitle">Upload proof (photos, invoices) before manager review</p>
+      <p class="page-subtitle">Upload proof details (photo / invoice) for manager review</p>
     </div>
 
     <div class="max-w-2xl">
       @if (milestones().length === 0 && !loading()) {
-        <div class="card text-center py-10 text-slate-500">No milestones in progress.</div>
+        <div class="card text-center py-10 text-slate-500">No milestones in progress to submit proof for.</div>
       } @else {
-        <!-- Select milestone -->
         <div class="card mb-4">
           <label class="form-label">Select Milestone</label>
           <select class="form-select" (change)="selectMilestone($event)">
             <option value="">Choose a milestone…</option>
-            @for (m of milestones(); track m.id) {
-              <option [value]="m.id">M{{ m.sequenceNumber }} · {{ m.description }} — {{ inr(m.amount) }}</option>
+            @for (m of milestones(); track m.milestoneId) {
+              <option [value]="m.milestoneId">
+                M{{ m.phaseNumber }} · {{ m.description }} — {{ inr(m.allocatedAmount) }}
+              </option>
             }
           </select>
         </div>
@@ -34,7 +36,7 @@ import { MilestoneResponse } from '../../../core/models/milestone.model';
         @if (selected()) {
           <div class="card">
             <h2 class="text-base font-semibold text-slate-900 mb-4">
-              Submit proof — Milestone {{ selected()!.sequenceNumber }}
+              Submit proof — Milestone {{ selected()!.phaseNumber }}
               <span class="text-sm font-normal text-slate-500 ml-1">{{ selected()!.description }}</span>
             </h2>
 
@@ -45,38 +47,42 @@ import { MilestoneResponse } from '../../../core/models/milestone.model';
             }
             @if (error()) { <div class="warning-bar mb-4">⚠️ {{ error() }}</div> }
 
-            <form [formGroup]="form" (ngSubmit)="submit()">
-              <div class="grid sm:grid-cols-2 gap-4 mb-4">
+            <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+              <div class="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Photo</p>
-                  <div class="drop-zone" (click)="photoInput.click()"
-                       (dragover)="$event.preventDefault()" (drop)="onDrop($event, 'photo')">
-                    @if (photo) {
-                      <p class="text-sm text-primary-700">📷 {{ photo.name }}</p>
-                    } @else {
-                      <p class="text-sm text-slate-400">Drop image</p>
-                    }
-                    <input #photoInput type="file" class="hidden" accept="image/*" (change)="onFile($event, 'photo')">
-                  </div>
+                  <label class="form-label">Proof Type</label>
+                  <select formControlName="proofType" class="form-select">
+                    <option value="PHOTO">Photo</option>
+                    <option value="INVOICE">Invoice</option>
+                    <option value="RECEIPT">Receipt</option>
+                    <option value="OTHER">Other</option>
+                  </select>
                 </div>
                 <div>
-                  <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Invoice / Receipt</p>
-                  <div class="drop-zone" (click)="invoiceInput.click()"
-                       (dragover)="$event.preventDefault()" (drop)="onDrop($event, 'invoice')">
-                    @if (invoice) {
-                      <p class="text-sm text-primary-700">📄 {{ invoice.name }}</p>
-                    } @else {
-                      <p class="text-sm text-slate-400">Drop file</p>
-                    }
-                    <input #invoiceInput type="file" class="hidden" accept=".pdf,.jpg,.png" (change)="onFile($event, 'invoice')">
-                  </div>
+                  <label class="form-label">File Name</label>
+                  <input formControlName="fileName" class="form-input" placeholder="e.g. renovation_photo.jpg">
+                  @if (form.get('fileName')?.invalid && form.get('fileName')?.touched) {
+                    <p class="form-error">File name required</p>
+                  }
                 </div>
               </div>
 
-              <div class="mb-4">
-                <label class="form-label">Note to manager</label>
-                <textarea formControlName="noteToManager" class="form-input min-h-[80px] resize-none"
+              <div>
+                <label class="form-label">File URL / Link</label>
+                <input formControlName="fileUrl" class="form-input" placeholder="https://drive.google.com/... or file path">
+                @if (form.get('fileUrl')?.invalid && form.get('fileUrl')?.touched) {
+                  <p class="form-error">File URL required</p>
+                }
+              </div>
+
+              <div>
+                <label class="form-label">Description / Note to manager</label>
+                <textarea formControlName="description" class="form-input min-h-[80px] resize-none"
                           placeholder="What was completed in this phase…"></textarea>
+              </div>
+
+              <div class="info-bar text-xs">
+                ℹ️ Status changes to PROOF_SUBMITTED after submission. The manager is notified.
               </div>
 
               <button type="submit" [disabled]="loading() || success()" class="btn-primary">
@@ -97,57 +103,55 @@ export class SubmitProofComponent implements OnInit {
   loading = signal(false);
   error = signal('');
   success = signal(false);
-  photo: File | null = null;
-  invoice: File | null = null;
   private loanId: number | null = null;
 
   constructor(private fb: FormBuilder, private mSvc: MilestoneService,
               private loanSvc: LoanService, private auth: AuthService) {
-    this.form = this.fb.group({ noteToManager: [''] });
+    this.form = this.fb.group({
+      proofType:   ['PHOTO',  Validators.required],
+      fileName:    ['',       Validators.required],
+      fileUrl:     ['',       Validators.required],
+      description: ['']
+    });
   }
 
   ngOnInit() {
     const uid = this.auth.currentUser()?.id;
     if (!uid) return;
     this.loanSvc.getLoansByBorrower(uid).subscribe(res => {
-      const loan = res.data?.find((l: any) => ['SANCTIONED', 'ACTIVE', 'MORATORIUM'].includes(l.status));
+      const loan = res.data?.find((l: LoanResponse) =>
+        ['SANCTIONED', 'ACTIVE', 'MORATORIUM'].includes(l.status));
       if (!loan) return;
-      this.loanId = loan.id;
-      this.mSvc.getMilestonesByLoan(loan.id).subscribe(r => {
-        this.milestones.set((r.data ?? []).filter((m: any) => ['IN_PROGRESS', 'PENDING'].includes(m.status)));
+      this.loanId = loan.loanId;
+      this.mSvc.getMilestonesByLoan(loan.loanId).subscribe(r => {
+        this.milestones.set((r.data ?? []).filter((m: MilestoneResponse) =>
+          ['IN_PROGRESS', 'PENDING', 'PARTIALLY_APPROVED'].includes(m.status)));
       });
     });
   }
 
   selectMilestone(e: Event) {
     const id = +(e.target as HTMLSelectElement).value;
-    this.selected.set(this.milestones().find(m => m.id === id) ?? null);
+    this.selected.set(this.milestones().find(m => m.milestoneId === id) ?? null);
     this.success.set(false);
   }
 
-  onFile(e: Event, type: 'photo' | 'invoice') {
-    const f = (e.target as HTMLInputElement).files?.[0];
-    if (type === 'photo') this.photo = f ?? null;
-    else this.invoice = f ?? null;
-  }
-
-  onDrop(e: DragEvent, type: 'photo' | 'invoice') {
-    e.preventDefault();
-    const f = e.dataTransfer?.files[0];
-    if (type === 'photo') this.photo = f ?? null;
-    else this.invoice = f ?? null;
-  }
-
   submit() {
-    if (!this.selected()) return;
-    this.loading.set(true);
-    this.error.set('');
-    const fd = new FormData();
-    if (this.photo) fd.append('photo', this.photo);
-    if (this.invoice) fd.append('invoice', this.invoice);
-    fd.append('noteToManager', this.form.value.noteToManager ?? '');
-    this.mSvc.submitProof(this.selected()!.id, fd).subscribe({
-      next: () => { this.success.set(true); this.loading.set(false); },
+    if (this.form.invalid || !this.selected() || !this.loanId) {
+      this.form.markAllAsTouched(); return;
+    }
+    const uid = this.auth.currentUser()!.id;
+    this.loading.set(true); this.error.set('');
+    this.mSvc.submitProof(this.selected()!.milestoneId, {
+      milestoneId:   this.selected()!.milestoneId,
+      loanId:        this.loanId!,
+      submittedById: uid,
+      proofType:     this.form.value.proofType as ProofType,
+      fileName:      this.form.value.fileName,
+      fileUrl:       this.form.value.fileUrl,
+      description:   this.form.value.description
+    }).subscribe({
+      next: () => { this.success.set(true); this.loading.set(false); this.form.reset({ proofType: 'PHOTO' }); },
       error: e => { this.error.set(e.error?.message ?? 'Submission failed'); this.loading.set(false); }
     });
   }

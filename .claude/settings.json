@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/debas/Videos/hello/project/src/main/java/com/group1/truststep/controller/**)",
+      "Read(//c/Users/debas/Videos/hello/project/src/main/java/com/group1/truststep/dto/request/**)",
+      "Read(//c/Users/debas/Videos/hello/project/src/main/java/com/group1/truststep/dto/response/**)",
+      "Bash(npx ng *)"
+    ]
+  }
+}

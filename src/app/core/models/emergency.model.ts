@@ -1,19 +1,38 @@
-export type EmergencyStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
+export type EmergencyStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISBURSED';
+export type AccessType = 'DIRECT' | 'EXTRA_REQUEST';
+export type EmergencyTypeEnum = 'MEDICAL' | 'EQUIPMENT' | 'WORKING_CAPITAL' | 'OTHER';
+export type PriorityEnum = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 export interface EmergencyTransactionRequest {
-  amount: number;
-  reason?: string;
-  type: 'AUTO' | 'MILESTONE_BORROW';
-  borrowFromMilestoneId?: number;
+  loanId: number;
+  requestedById: number;
+  amountRequested: number;
+  accessType: AccessType;
+  reason: string;
+  proofUrl?: string;
+  hasProof?: boolean;
+  emergencyType?: EmergencyTypeEnum;
+  priority?: PriorityEnum;
 }
 
 export interface EmergencyTransactionResponse {
-  id: number;
+  emergencyId: number;
   loanId: number;
-  amount: number;
-  type: string;
+  requestedById: number;
+  requestedByName: string;
+  reviewedById: number;
+  reviewedByName: string;
+  amountRequested: number;
+  amountDisbursed: number;
+  accessType: AccessType;
   reason: string;
+  proofUrl: string;
+  hasProof: boolean;
+  emergencyType: EmergencyTypeEnum;
+  priority: PriorityEnum;
   status: EmergencyStatus;
-  borrowedFromMilestoneId: number;
-  createdAt: string;
+  managerRemarks: string;
+  requestedAt: string;
+  decidedAt: string;
+  disbursedAt: string;
 }

@@ -46,3 +46,37 @@ export interface ChangePasswordRequest {
   newPassword: string;
   confirmPassword: string;
 }
+
+export type GenderType = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
+
+export interface UserProfileResponse {
+  userId: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  role: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  profilePhoto: string;
+  dateOfBirth: string;
+  gender: GenderType;
+  aadhaarLast4: string;
+  kycComplete: boolean;
+  active: boolean;
+  verified: boolean;
+  lastLogin: string;
+}
+
+export interface UpdateProfileRequest {
+  fullName?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  profilePhoto?: string;
+  dateOfBirth?: string;
+  gender?: GenderType;
+}

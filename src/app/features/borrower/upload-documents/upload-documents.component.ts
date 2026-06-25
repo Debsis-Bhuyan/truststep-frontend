@@ -102,8 +102,8 @@ export class UploadDocumentsComponent implements OnInit {
     this.loanSvc.getLoansByBorrower(uid).subscribe(res => {
       const loan = res.data?.[0];
       if (loan) {
-        this.loanId.set(loan.id);
-        this.docSvc.getByLoan(loan.id).subscribe(r => this.docs.set(r.data ?? []));
+        this.loanId.set(loan.loanId);
+        this.docSvc.getByLoan(loan.loanId).subscribe(r => this.docs.set(r.data ?? []));
       }
     });
   }

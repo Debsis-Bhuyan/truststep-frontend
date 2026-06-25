@@ -6,7 +6,8 @@ import { Observable } from 'rxjs';
 import {
   LoginRequest, RegisterRequest, AuthResponse,
   ApiResponse, CurrentUser, ForgotPasswordRequest,
-  ResetPasswordRequest, ChangePasswordRequest
+  ResetPasswordRequest, ChangePasswordRequest,
+  UserProfileResponse, UpdateProfileRequest
 } from '../models/auth.model';
 import { environment } from '../../../environments/environment';
 
@@ -64,6 +65,14 @@ export class AuthService {
 
   changePassword(req: ChangePasswordRequest): Observable<ApiResponse<void>> {
     return this.http.post<ApiResponse<void>>(`${this.base}/change-password`, req);
+  }
+
+  getProfile(): Observable<ApiResponse<UserProfileResponse>> {
+    return this.http.get<ApiResponse<UserProfileResponse>>(`${this.base}/profile`);
+  }
+
+  updateProfile(req: UpdateProfileRequest): Observable<ApiResponse<UserProfileResponse>> {
+    return this.http.put<ApiResponse<UserProfileResponse>>(`${this.base}/profile`, req);
   }
 
   logout(): void {

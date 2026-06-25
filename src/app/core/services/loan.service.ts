@@ -30,7 +30,7 @@ export class LoanService {
   searchLoans(managerId: number, keyword?: string, status?: LoanStatus): Observable<ApiResponse<LoanResponse[]>> {
     let params = new HttpParams().set('managerId', managerId.toString());
     if (keyword) params = params.set('keyword', keyword);
-    if (status) params = params.set('status', status);
+    if (status)  params = params.set('status',  status);
     return this.http.get<ApiResponse<LoanResponse[]>>(`${this.base}/search`, { params });
   }
 

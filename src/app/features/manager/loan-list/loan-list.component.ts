@@ -38,15 +38,15 @@ import { LoanResponse, LoanStatus } from '../../../core/models/loan.model';
             <th>Loan #</th><th>Borrower</th><th>Amount</th><th>Disbursed</th><th>Status</th><th></th>
           </tr></thead>
           <tbody>
-            @for (l of loans(); track l.id) {
+            @for (l of loans(); track l.loanId) {
               <tr>
                 <td class="font-mono text-xs">{{ l.loanNumber }}</td>
                 <td class="font-medium">{{ l.borrowerName }}</td>
-                <td>{{ inr(l.loanAmount) }}</td>
-                <td>{{ inr(l.disbursedAmount) }}</td>
+                <td>{{ inr(l.totalApprovedAmount) }}</td>
+                <td>{{ inr(l.totalDisbursed) }}</td>
                 <td><span [class]="statusBadge(l.status)" class="badge">{{ l.status }}</span></td>
                 <td>
-                  <a [routerLink]="'/manager/loans/' + l.id + '/review'" class="btn-secondary text-xs py-1.5">Open</a>
+                  <a [routerLink]="'/manager/loans/' + l.loanId + '/review'" class="btn-secondary text-xs py-1.5">Open</a>
                 </td>
               </tr>
             }
