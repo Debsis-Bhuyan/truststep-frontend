@@ -128,7 +128,7 @@ export class MainLayoutComponent {
       { label: 'Emergency Fund',  route: '/borrower/emergency',   icon: '⚡' },
       { label: 'Repayment',       route: '/borrower/repayment',   icon: '💳' },
       { label: 'Notifications',   route: '/notifications',         icon: '🔔' },
-      { label: 'My Profile',      route: '/profile',               icon: '👤' },
+      // { label: 'My Profile',      route: '/profile',               icon: '👤' },
     ];
     if (r.includes('MANAGER')) return [
       { label: 'Dashboard',       route: '/manager/dashboard',    icon: '🏠' },
@@ -136,7 +136,7 @@ export class MainLayoutComponent {
       { label: 'Approvals',       route: '/manager/approvals',    icon: '✅' },
       { label: 'Emergency Review',route: '/manager/review-emergency', icon: '⚡' },
       { label: 'Notifications',   route: '/notifications',         icon: '🔔' },
-      { label: 'My Profile',      route: '/profile',               icon: '👤' },
+      // { label: 'My Profile',      route: '/profile',               icon: '👤' },
     ];
     if (r.includes('ADMIN')) return [
       { label: 'Dashboard',       route: '/admin/dashboard',      icon: '🏠' },
@@ -144,7 +144,7 @@ export class MainLayoutComponent {
       { label: 'System Config',   route: '/admin/config',         icon: '⚙️' },
       { label: 'Audit Log',       route: '/admin/audit',          icon: '📑' },
       { label: 'Notifications',   route: '/notifications',         icon: '🔔' },
-      { label: 'My Profile',      route: '/profile',               icon: '👤' },
+      // { label: 'My Profile',      route: '/profile',               icon: '👤' },
     ];
     return [];
   });

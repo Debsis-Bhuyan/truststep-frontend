@@ -14,7 +14,7 @@ export interface PageResponse<T> {
 
 export interface UserManagementResponse {
   id: number;
-  fullName: string;
+  name: string;
   email: string;
   role: string;
   isActive: boolean;

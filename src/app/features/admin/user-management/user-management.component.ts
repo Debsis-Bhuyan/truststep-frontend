@@ -43,7 +43,7 @@ import { UserManagementResponse } from '../../../core/models/admin.model';
           <tbody>
             @for (u of filtered(); track u.id) {
               <tr>
-                <td class="font-medium">{{ u.fullName }}</td>
+                <td class="font-medium">{{ u.name }}</td>
                 <td class="text-slate-500">{{ u.email }}</td>
                 <td><span class="badge badge-blue">{{ u.role }}</span></td>
                 <td>
@@ -111,7 +111,7 @@ export class UserManagementComponent implements OnInit {
         let list = res.data?.content?? [];
         if (this.search) {
           const q = this.search.toLowerCase();
-          list = list.filter(u => u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+          list = list.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
         }
         this.users.set(res.data?.content ?? []);
         this.filtered.set(list);
