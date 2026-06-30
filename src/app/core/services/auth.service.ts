@@ -108,4 +108,21 @@ export class AuthService {
     else if (role?.includes('ADMIN')) this.router.navigate(['/admin/dashboard']);
     else this.router.navigate(['/login']);
   }
+
+  refreshToken(): Observable<ApiResponse<AuthResponse>> {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      this.logout();
+      throw new Error('No refresh token available');
+    }
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.base}/refresh`, { refreshToken }).pipe(
+      tap(res => {
+        if (res.data) {
+          localStorage.setItem('accessToken', res.data.accessToken);
+          localStorage.setItem('refreshToken', res.data.refreshToken);
+          localStorage.setItem('role', res.data.role);
+        }
+      })
+    );
+  }
 }
