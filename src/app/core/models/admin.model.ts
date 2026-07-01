@@ -14,11 +14,33 @@ export interface PageResponse<T> {
 
 export interface UserManagementResponse {
   id: number;
-  name: string;
+  fullName: string;
   email: string;
   role: string;
-  isActive: boolean;
+  active: boolean;
+}
+
+export type GenderType = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
+
+export interface AdminUserDto {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  enabled: boolean;
+  verified: boolean;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  profilePhoto: string | null;
+  dateOfBirth: string | null;
+  gender: GenderType | null;
+  aadhaarLast4: string | null;
+  lastLogin: string | null;
   createdAt: string;
+  updatedAt: string | null;
 }
 
 export interface SystemConfigResponse {

@@ -89,9 +89,9 @@ import { BorrowerDashboardResponse } from '../../../core/models/loan.model';
   `
 })
 export class BorrowerDashboardComponent implements OnInit {
-  dash = signal<BorrowerDashboardResponse | null>(null);
+  dash    = signal<BorrowerDashboardResponse | null>(null);
   loading = signal(true);
-  user = this.auth.currentUser;
+  user    = this.auth.currentUser;
 
   constructor(private svc: DashboardService, private auth: AuthService) {}
 

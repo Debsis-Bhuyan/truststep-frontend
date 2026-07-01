@@ -84,6 +84,7 @@ export const routes: Routes = [
           { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
           { path: 'dashboard', loadComponent: () => import('./features/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent) },
           { path: 'users',     loadComponent: () => import('./features/admin/user-management/user-management.component').then(m => m.UserManagementComponent) },
+          { path: 'users/:id', loadComponent: () => import('./features/admin/user-profile/admin-user-profile.component').then(m => m.AdminUserProfileComponent) },
           { path: 'config',    loadComponent: () => import('./features/admin/system-config/system-config.component').then(m => m.SystemConfigComponent) },
           { path: 'audit',     loadComponent: () => import('./features/admin/audit-log/audit-log.component').then(m => m.AuditLogComponent) },
         ]

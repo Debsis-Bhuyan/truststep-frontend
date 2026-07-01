@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../shared/toast/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -64,7 +65,7 @@ export class LoginComponent {
   showPwd = signal(false);
   error = signal('');
 
-  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
+  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router, private toast: ToastService) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
@@ -80,12 +81,13 @@ export class LoginComponent {
     this.auth.login(this.form.value).subscribe({
       next: () => {
         this.auth.fetchCurrentUser().subscribe({
-          next: () => this.auth.navigateToDashboard(),
-          error: () => this.auth.navigateToDashboard()
+          next: () => { this.toast.success('Logged in successfully!'); this.auth.navigateToDashboard(); },
+          error: () => { this.toast.success('Logged in successfully!'); this.auth.navigateToDashboard(); }
         });
       },
       error: (e) => {
         this.error.set(e.error?.message ?? 'Invalid credentials');
+        this.toast.error(e.error?.message ?? 'Invalid credentials');
         this.loading.set(false);
       }
     });

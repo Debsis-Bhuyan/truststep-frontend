@@ -73,7 +73,7 @@ import { ManagerDashboardResponse } from '../../../core/models/loan.model';
   `
 })
 export class ManagerDashboardComponent implements OnInit {
-  dash = signal<ManagerDashboardResponse | null>(null);
+  dash    = signal<ManagerDashboardResponse | null>(null);
   loading = signal(true);
 
   constructor(private svc: DashboardService, private auth: AuthService) {}
@@ -93,7 +93,7 @@ export class ManagerDashboardComponent implements OnInit {
   }
 
   typeBadge(t: string) {
-    return { Milestone: 'badge-blue', Emergency: 'badge-red', Sanction: 'badge-amber' }[t] ?? 'badge-slate';
+    return ({ Milestone: 'badge-blue', Emergency: 'badge-red', Sanction: 'badge-amber' } as Record<string, string>)[t] ?? 'badge-slate';
   }
 
   reviewRoute(type: string, loanId: number) {

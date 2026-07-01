@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-landing',
@@ -23,8 +24,12 @@ import { CommonModule } from '@angular/common';
           <a href="#security" class="hover:text-primary-600 transition-colors">Security</a>
         </div>
         <div class="flex items-center gap-3">
-          <a routerLink="/login" class="btn-secondary text-sm py-2">Sign in</a>
-          <a routerLink="/register" class="btn-primary text-sm py-2">Get started</a>
+          @if (loggedIn()) {
+            <a [routerLink]="dashboardRoute()" class="btn-primary text-sm py-2">Go to Dashboard</a>
+          } @else {
+            <a routerLink="/login" class="btn-secondary text-sm py-2">Sign in</a>
+            <a routerLink="/register" class="btn-primary text-sm py-2">Get started</a>
+          }
         </div>
       </div>
     </nav>
@@ -46,12 +51,18 @@ import { CommonModule } from '@angular/common';
           and releasing capital exactly when it's needed.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a routerLink="/register" class="btn-primary bg-white text-primary-700 hover:bg-primary-50 text-base px-8 py-3">
-            Apply for a loan
-          </a>
-          <a routerLink="/login" class="btn-secondary bg-transparent border-white/30 text-white hover:bg-white/10 text-base px-8 py-3">
-            Sign in
-          </a>
+          @if (loggedIn()) {
+            <a [routerLink]="dashboardRoute()" class="btn-primary bg-white text-primary-700 hover:bg-primary-50 text-base px-8 py-3">
+              Go to Dashboard
+            </a>
+          } @else {
+            <a routerLink="/register" class="btn-primary bg-white text-primary-700 hover:bg-primary-50 text-base px-8 py-3">
+              Apply for a loan
+            </a>
+            <a routerLink="/login" class="btn-secondary bg-transparent border-white/30 text-white hover:bg-white/10 text-base px-8 py-3">
+              Sign in
+            </a>
+          }
         </div>
 
         <!-- Stats bar -->
@@ -202,12 +213,18 @@ import { CommonModule } from '@angular/common';
           Apply in minutes. Get milestone-based disbursement with full transparency at every step.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a routerLink="/register" class="btn-primary bg-white text-primary-700 hover:bg-primary-50 text-base px-8 py-3">
-            Create account
-          </a>
-          <a routerLink="/login" class="btn-secondary bg-transparent border-white/30 text-white hover:bg-white/10 text-base px-8 py-3">
-            Sign in
-          </a>
+          @if (loggedIn()) {
+            <a [routerLink]="dashboardRoute()" class="btn-primary bg-white text-primary-700 hover:bg-primary-50 text-base px-8 py-3">
+              Go to Dashboard
+            </a>
+          } @else {
+            <a routerLink="/register" class="btn-primary bg-white text-primary-700 hover:bg-primary-50 text-base px-8 py-3">
+              Create account
+            </a>
+            <a routerLink="/login" class="btn-secondary bg-transparent border-white/30 text-white hover:bg-white/10 text-base px-8 py-3">
+              Sign in
+            </a>
+          }
         </div>
       </div>
     </section>
@@ -230,9 +247,13 @@ import { CommonModule } from '@angular/common';
           <div>
             <h4 class="text-white font-semibold mb-3">Quick links</h4>
             <ul class="space-y-2 text-sm">
-              <li><a routerLink="/login" class="hover:text-white transition-colors">Sign in</a></li>
-              <li><a routerLink="/register" class="hover:text-white transition-colors">Register as Borrower</a></li>
-              <li><a routerLink="/forgot-password" class="hover:text-white transition-colors">Forgot password</a></li>
+              @if (loggedIn()) {
+                <li><a [routerLink]="dashboardRoute()" class="hover:text-white transition-colors">Go to Dashboard</a></li>
+              } @else {
+                <li><a routerLink="/login" class="hover:text-white transition-colors">Sign in</a></li>
+                <li><a routerLink="/register" class="hover:text-white transition-colors">Register as Borrower</a></li>
+                <li><a routerLink="/forgot-password" class="hover:text-white transition-colors">Forgot password</a></li>
+              }
             </ul>
           </div>
           <div>
@@ -253,6 +274,18 @@ import { CommonModule } from '@angular/common';
   `
 })
 export class LandingComponent {
+  private auth = inject(AuthService);
+
+  // Reactive: re-evaluates whenever currentUser signal changes (login/logout)
+  loggedIn = computed(() => !!this.auth.currentUser() || this.auth.isLoggedIn());
+
+  dashboardRoute(): string {
+    const role = this.auth.getRole() ?? '';
+    if (role.includes('MANAGER')) return '/manager/dashboard';
+    if (role.includes('ADMIN'))   return '/admin/dashboard';
+    return '/borrower/dashboard';
+  }
+
   stats = [
     { value: '₹5L+', label: 'Avg loan disbursed' },
     { value: '3+',   label: 'Milestones per loan' },

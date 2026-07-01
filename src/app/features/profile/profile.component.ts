@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileResponse, GenderType } from '../../core/models/auth.model';
+import { ToastService } from '../../shared/toast/toast.service';
 
 @Component({
   selector: 'app-profile',
@@ -312,6 +313,7 @@ import { UserProfileResponse, GenderType } from '../../core/models/auth.model';
   `
 })
 export class ProfileComponent implements OnInit {
+  private toast = inject(ToastService);
   profile    = signal<UserProfileResponse | null>(null);
   loading    = signal(true);
   activeTab  = signal<'info' | 'account' | 'password'>('info');
@@ -450,10 +452,12 @@ export class ProfileComponent implements OnInit {
         this.profile.set(res.data);
         this.infoSuccess.set(true);
         this.savingInfo.set(false);
+        this.toast.success('Profile updated successfully!');
         setTimeout(() => this.infoSuccess.set(false), 4000);
       },
       error: e => {
         this.infoError.set(e.error?.message ?? 'Update failed');
+        this.toast.error(e.error?.message ?? 'Profile update failed');
         this.savingInfo.set(false);
       }
     });
@@ -467,9 +471,11 @@ export class ProfileComponent implements OnInit {
         this.pwdSuccess.set(true);
         this.pwdForm.reset();
         this.savingPwd.set(false);
+        this.toast.success('Password changed successfully!');
       },
       error: e => {
         this.pwdError.set(e.error?.message ?? 'Password change failed');
+        this.toast.error(e.error?.message ?? 'Password change failed');
         this.savingPwd.set(false);
       }
     });

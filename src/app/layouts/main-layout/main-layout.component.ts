@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
@@ -40,7 +40,7 @@ interface NavItem { label: string; route: string; icon: string; }
         <!-- User footer -->
         <div class="px-4 py-4 border-t border-slate-100">
           <a routerLink="/profile"
-             class="flex items-center gap-3 mb-3 p-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer group"
+             class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer group"
              (click)="closeSidebar()">
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-700
                         flex items-center justify-center shrink-0">
@@ -56,9 +56,6 @@ interface NavItem { label: string; route: string; icon: string; }
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
           </a>
-          <button (click)="logout()" class="w-full btn-secondary text-xs py-2">
-            Sign out
-          </button>
         </div>
       </aside>
 
@@ -92,23 +89,63 @@ interface NavItem { label: string; route: string; icon: string; }
                       flex items-center justify-center hover:opacity-80 transition-opacity ml-1">
               <span class="text-white font-semibold text-sm">{{ userInitial() }}</span>
             </a>
+            <!-- Sign out -->
+            <button (click)="openLogoutModal()" title="Sign out"
+                    class="ml-1 p-2 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-600 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+            </button>
           </div>
         </header>
 
         <!-- Page content -->
         <main class="flex-1 overflow-y-auto">
-          <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6">
+          <div class="max-w-8xl mx-auto px-4 py-6 sm:px-6">
             <router-outlet />
           </div>
         </main>
       </div>
     </div>
+
+    <!-- Logout confirm modal -->
+    @if (logoutModalOpen()) {
+      <div class="fixed inset-0 z-[999] flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="closeLogoutModal()"></div>
+        <!-- Dialog -->
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 flex flex-col gap-4">
+          <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto">
+            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+          </div>
+          <div class="text-center">
+            <h3 class="text-lg font-semibold text-slate-900">Sign out?</h3>
+            <p class="text-sm text-slate-500 mt-1">You will be redirected to the login page.</p>
+          </div>
+          <div class="flex gap-3">
+            <button (click)="closeLogoutModal()"
+                    class="flex-1 btn-secondary py-2.5">
+              Cancel
+            </button>
+            <button (click)="confirmLogout()"
+                    class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-lg py-2.5 transition-colors">
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `
 })
 export class MainLayoutComponent {
-  sidebarOpen = signal(false);
-  user = this.auth.currentUser;
-  userInitial = computed(() => this.auth.currentUser()?.name?.[0]?.toUpperCase() ?? 'U');
+  sidebarOpen    = signal(false);
+  logoutModalOpen = signal(false);
+  user           = this.auth.currentUser;
+  userInitial    = computed(() => this.auth.currentUser()?.name?.[0]?.toUpperCase() ?? 'U');
 
   roleLabel = computed(() => {
     const r = this.auth.getRole() ?? '';
@@ -151,7 +188,9 @@ export class MainLayoutComponent {
 
   constructor(private auth: AuthService) {}
 
-  toggleSidebar() { this.sidebarOpen.update(v => !v); }
-  closeSidebar()  { this.sidebarOpen.set(false); }
-  logout()        { this.auth.logout(); }
+  toggleSidebar()   { this.sidebarOpen.update(v => !v); }
+  closeSidebar()    { this.sidebarOpen.set(false); }
+  openLogoutModal() { this.logoutModalOpen.set(true); }
+  closeLogoutModal(){ this.logoutModalOpen.set(false); }
+  confirmLogout()   { this.logoutModalOpen.set(false); this.auth.logout(); }
 }

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import {
   ApiResponse, PageResponse,
   AdminDashboardResponse, AuditLogResponse,
-  SystemConfigResponse, SystemConfigRequest, UserManagementResponse
+  SystemConfigResponse, SystemConfigRequest, UserManagementResponse, AdminUserDto
 } from '../models/admin.model';
 import { environment } from '../../../environments/environment';
 
@@ -22,11 +22,23 @@ export class AdminService {
 
   /* ── User management: /api/admin/users ───────── */
 
-  getUsers(page = 0, size = 20, role?: string, isActive?: boolean): Observable<ApiResponse<PageResponse<UserManagementResponse>>> {
-    let params = new HttpParams().set('page', page).set('size', size);
-    if (role) params = params.set('role', role);
-    if (isActive !== undefined) params = params.set('isActive', isActive.toString());
-    return this.http.get<ApiResponse<PageResponse<UserManagementResponse>>>(`${this.base}/admin/users`, { params });
+  getUsers(page = 0, size = 10, sortBy = 'userId', sortDir = 'asc'): Observable<ApiResponse<PageResponse<AdminUserDto>>> {
+    const params = new HttpParams()
+      .set('page', page).set('size', size)
+      .set('sortBy', sortBy).set('sortDir', sortDir);
+    return this.http.get<ApiResponse<PageResponse<AdminUserDto>>>(`${this.base}/admin/users`, { params });
+  }
+
+  getUserById(userId: number): Observable<ApiResponse<AdminUserDto>> {
+    return this.http.get<ApiResponse<AdminUserDto>>(`${this.base}/admin/users/${userId}`);
+  }
+
+  searchUsers(keyword?: string, role?: string, active?: boolean): Observable<ApiResponse<UserManagementResponse[]>> {
+    let params = new HttpParams();
+    if (keyword) params = params.set('keyword', keyword);
+    if (role)    params = params.set('role', role);
+    if (active !== undefined) params = params.set('active', active.toString());
+    return this.http.get<ApiResponse<UserManagementResponse[]>>(`${this.base}/admin/users/search`, { params });
   }
 
   deactivateUser(userId: number): Observable<ApiResponse<void>> {
@@ -39,6 +51,12 @@ export class AdminService {
 
   resetUserPassword(userId: number): Observable<ApiResponse<any>> {
     return this.http.post<ApiResponse<any>>(`${this.base}/admin/users/${userId}/reset-password`, {});
+  }
+
+  updateUserRole(userId: number, roleName: string): Observable<ApiResponse<any>> {
+    return this.http.patch<ApiResponse<any>>(`${this.base}/admin/users/${userId}/role`, null, {
+      params: new HttpParams().set('roleName', roleName)
+    });
   }
 
   /* ── System config: /api/admin/config ────────── */
