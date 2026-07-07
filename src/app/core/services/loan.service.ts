@@ -48,4 +48,9 @@ export class LoanService {
     const params = new HttpParams().set('page', page).set('size', size);
     return this.http.get<ApiResponse<PageResponse<LoanResponse>>>(this.base, { params });
   }
+
+  getLoansByStatus(status: LoanStatus, page = 0, size = 10): Observable<ApiResponse<PageResponse<LoanResponse>>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<ApiResponse<PageResponse<LoanResponse>>>(`${this.base}/status/${status}`, { params });
+  }
 }

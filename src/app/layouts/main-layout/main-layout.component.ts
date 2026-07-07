@@ -177,6 +177,7 @@ export class MainLayoutComponent {
     ];
     if (r.includes('ADMIN')) return [
       { label: 'Dashboard',       route: '/admin/dashboard',      icon: '🏠' },
+      { label: 'All Loans',       route: '/admin/loans',          icon: '📋' },
       { label: 'Users',           route: '/admin/users',          icon: '👥' },
       { label: 'System Config',   route: '/admin/config',         icon: '⚙️' },
       { label: 'Audit Log',       route: '/admin/audit',          icon: '📑' },

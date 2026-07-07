@@ -219,6 +219,7 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   readonly quickActions = [
+    { label: 'All Loans',      route: '/admin/loans',   icon: '📋' },
     { label: 'Manage Users',   route: '/admin/users',   icon: '👥' },
     { label: 'System Config',  route: '/admin/config',  icon: '⚙️' },
     { label: 'Audit Log',      route: '/admin/audit',   icon: '📑' },

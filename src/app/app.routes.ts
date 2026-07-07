@@ -83,6 +83,7 @@ export const routes: Routes = [
         children: [
           { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
           { path: 'dashboard', loadComponent: () => import('./features/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent) },
+          { path: 'loans',     loadComponent: () => import('./features/admin/all-loans/all-loans.component').then(m => m.AllLoansComponent) },
           { path: 'users',     loadComponent: () => import('./features/admin/user-management/user-management.component').then(m => m.UserManagementComponent) },
           { path: 'users/:id', loadComponent: () => import('./features/admin/user-profile/admin-user-profile.component').then(m => m.AdminUserProfileComponent) },
           { path: 'config',    loadComponent: () => import('./features/admin/system-config/system-config.component').then(m => m.SystemConfigComponent) },
