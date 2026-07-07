@@ -18,7 +18,7 @@ import { ToastService } from '../../shared/toast/toast.service';
     @if (loading()) {
       <div class="flex justify-center py-16"><span class="spinner w-8 h-8"></span></div>
     } @else if (profile()) {
-      <div class="max-w-4xl space-y-5">
+      <div class="max-w-8xl space-y-5">
 
         <!-- ── Profile card (top) ─────────────────────────── -->
         <div class="card">
@@ -246,7 +246,7 @@ import { ToastService } from '../../shared/toast/toast.service';
               <div>
                 <label class="form-label">Current password</label>
                 <div class="relative">
-                  <input formControlName="oldPassword"
+                  <input formControlName="currentPassword"
                          [type]="showOld() ? 'text' : 'password'"
                          class="form-input pr-10" placeholder="••••••••">
                   <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
@@ -254,7 +254,7 @@ import { ToastService } from '../../shared/toast/toast.service';
                     {{ showOld() ? '🙈' : '👁️' }}
                   </button>
                 </div>
-                @if (fp['oldPassword'].invalid && fp['oldPassword'].touched) {
+                @if (fp['currentPassword'].invalid && fp['currentPassword'].touched) {
                   <p class="form-error">Current password required</p>
                 }
               </div>
@@ -350,7 +350,7 @@ export class ProfileComponent implements OnInit {
     const p = this.profile();
     if (!p) return [];
     return [
-      { label: 'User ID',     value: `#${p.userId}`,        badge: '' },
+      // { label: 'User ID',     value: `#${p.userId}`,        badge: '' },
       { label: 'Email',       value: p.email,                badge: '' },
       { label: 'Role',        value: this.fmtRole(p.role),   badge: this.roleBadge(p.role) },
       { label: 'Account',     value: p.active ? 'Active' : 'Inactive', badge: p.active ? 'badge-green' : 'badge-slate' },
@@ -398,7 +398,7 @@ export class ProfileComponent implements OnInit {
     });
 
     this.pwdForm = this.fb.group({
-      oldPassword:     ['', Validators.required],
+      currentPassword:     ['', Validators.required],
       newPassword:     ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required]
     }, { validators: this.passwordMatch });

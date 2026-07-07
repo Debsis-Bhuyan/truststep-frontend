@@ -33,12 +33,12 @@ export class AdminService {
     return this.http.get<ApiResponse<AdminUserDto>>(`${this.base}/admin/users/${userId}`);
   }
 
-  searchUsers(keyword?: string, role?: string, active?: boolean): Observable<ApiResponse<UserManagementResponse[]>> {
+  searchUsers(keyword?: string, role?: string, active?: boolean): Observable<ApiResponse<AdminUserDto[]>> {
     let params = new HttpParams();
     if (keyword) params = params.set('keyword', keyword);
-    if (role)    params = params.set('role', role);
+    if (role)    params = params.set('role', `ROLE_${role}`);
     if (active !== undefined) params = params.set('active', active.toString());
-    return this.http.get<ApiResponse<UserManagementResponse[]>>(`${this.base}/admin/users/search`, { params });
+    return this.http.get<ApiResponse<AdminUserDto[]>>(`${this.base}/admin/users/search`, { params });
   }
 
   deactivateUser(userId: number): Observable<ApiResponse<void>> {

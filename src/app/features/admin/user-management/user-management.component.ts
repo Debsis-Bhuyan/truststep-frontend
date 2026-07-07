@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminService } from '../../../core/services/admin.service';
-import { AdminUserDto, UserManagementResponse } from '../../../core/models/admin.model';
+import { AdminUserDto } from '../../../core/models/admin.model';
 import { ToastService } from '../../../shared/toast/toast.service';
 
 interface UserRow {
@@ -74,7 +74,7 @@ type SortField = 'userId' | 'email' | 'fullName';
         <div class="flex items-center gap-2 shrink-0">
           <span class="text-xs text-slate-400">Sort by</span>
           <select [(ngModel)]="sortBy" (ngModelChange)="reload()" class="form-select text-xs py-1.5 w-36">
-            <option value="userId">ID</option>
+            <option value="userId">Select</option>
             <option value="fullName">Name</option>
             <option value="email">Email</option>
           </select>
@@ -123,10 +123,11 @@ type SortField = 'userId' | 'email' | 'fullName';
         <table class="ts-table">
           <thead><tr>
             <th>User</th>
-            @if (!searchMode()) { <th>Phone</th> }
+            <th>Phone</th>
             <th>Role</th>
             <th>Status</th>
-            @if (!searchMode()) { <th>Verified</th><th>Joined</th> }
+            <th>Verified</th>
+            <th>Joined</th>
             <th class="text-right pr-4">Actions</th>
           </tr></thead>
           <tbody>
@@ -149,9 +150,7 @@ type SortField = 'userId' | 'email' | 'fullName';
                     </div>
                   </div>
                 </td>
-                @if (!searchMode()) {
-                  <td class="text-slate-500 text-sm">{{ u.phone || '—' }}</td>
-                }
+                <td class="text-slate-500 text-sm">{{ u.phone || '—' }}</td>
                 <td>
                   <span [class]="roleBadge(u.role)" class="badge">{{ fmtRole(u.role) }}</span>
                 </td>
@@ -160,14 +159,12 @@ type SortField = 'userId' | 'email' | 'fullName';
                     {{ u.active ? 'Active' : 'Inactive' }}
                   </span>
                 </td>
-                @if (!searchMode()) {
-                  <td>
-                    <span [class]="u.verified ? 'badge-blue' : 'badge-slate'" class="badge">
-                      {{ u.verified ? '✓ KYC' : 'Pending' }}
-                    </span>
-                  </td>
-                  <td class="text-slate-400 text-xs">{{ u.createdAt | date:'dd MMM yyyy' }}</td>
-                }
+                <td>
+                  <span [class]="u.verified ? 'badge-blue' : 'badge-slate'" class="badge">
+                    {{ u.verified ? '✓ KYC' : 'Pending' }}
+                  </span>
+                </td>
+                <td class="text-slate-400 text-xs">{{ u.createdAt | date:'dd MMM yyyy' }}</td>
                 <!-- Actions: kebab menu -->
                 <td class="text-right pr-3" (click)="$event.stopPropagation()">
                   <div class="kebab-menu">
@@ -235,7 +232,7 @@ type SortField = 'userId' | 'email' | 'fullName';
             }
             @empty {
               <tr>
-                <td [attr.colspan]="searchMode() ? 4 : 7" class="text-center py-14 text-slate-400">
+                <td colspan="7" class="text-center py-14 text-slate-400">
                   <p class="text-2xl mb-2">🔍</p>
                   <p>{{ searchMode() ? 'No users match your search.' : 'No users found.' }}</p>
                 </td>
@@ -337,7 +334,7 @@ type SortField = 'userId' | 'email' | 'fullName';
         </div>
       } @else {
         <p class="mt-4 text-xs text-slate-400 text-center">
-          Server-side search — showing all matching users across all pages.
+          Showing all matching users across all pages.
         </p>
       }
     }
@@ -502,7 +499,7 @@ export class UserManagementComponent implements OnInit {
       active
     ).subscribe({
       next: res => {
-        this.rows.set((res.data ?? []).map(this.fromSearchResult));
+        this.rows.set((res.data ?? []).map(this.fromAdminDto));
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -513,10 +510,6 @@ export class UserManagementComponent implements OnInit {
     id: u.id, name: u.name, email: u.email, phone: u.phone,
     role: u.role, active: u.enabled, verified: u.verified,
     createdAt: u.createdAt, profilePhoto: u.profilePhoto ?? undefined
-  });
-
-  private fromSearchResult = (u: UserManagementResponse): UserRow => ({
-    id: u.id, name: u.fullName, email: u.email, role: u.role, active: u.active
   });
 
   initial(name: string)  { return (name?.[0] ?? '?').toUpperCase(); }
